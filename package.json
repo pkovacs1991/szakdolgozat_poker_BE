@@ -1,0 +1,29 @@
+{
+  "name": "poker_back_end",
+  "version": "1.0.0",
+  "description": "Back end for Poker",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pkovacs1991/szakdolgozat_poker_BE.git"
+  },
+  "author": "Peter Kovacs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pkovacs1991/szakdolgozat_poker_BE/issues"
+  },
+  "homepage": "https://github.com/pkovacs1991/szakdolgozat_poker_BE#readme",
+  "devDependencies": {
+    "nodemon": "^1.12.0"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.4",
+    "mongodb": "^2.2.31",
+    "mongoose": "^4.11.10"
+  }
+}
