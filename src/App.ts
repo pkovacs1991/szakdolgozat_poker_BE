@@ -5,7 +5,8 @@ import * as bodyParser from 'body-parser';
 import "reflect-metadata";
 import {createConnection} from "typeorm";
 import {User} from "./entity/User";
-import HeroRouter from './routes/HeroRouter'
+import AuthController from './controller/AuthController'
+
 // Creates and configures an ExpressJS web server.
 class App {
 
@@ -18,6 +19,7 @@ class App {
     this.middleware();
     this.routes();
       createConnection().then(async connection => {
+
 
           console.log("Loading users from the database...");
           const users = await connection.manager.find(User);
@@ -51,7 +53,7 @@ class App {
       });
     });
     this.express.use('/', router);
-    this.express.use('/api/v1/heroes', HeroRouter);
+    this.express.use('/api/v1/auth', AuthController);
   }
 
 }

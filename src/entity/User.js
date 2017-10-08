@@ -14,6 +14,18 @@ var User = /** @class */ (function () {
         typeorm_1.PrimaryGeneratedColumn()
     ], User.prototype, "id", void 0);
     __decorate([
+        typeorm_1.Column({ unique: true })
+    ], User.prototype, "username", void 0);
+    __decorate([
+        typeorm_1.Column()
+    ], User.prototype, "password", void 0);
+    __decorate([
+        typeorm_1.Column({ unique: true })
+    ], User.prototype, "email", void 0);
+    __decorate([
+        typeorm_1.Column()
+    ], User.prototype, "balance", void 0);
+    __decorate([
         typeorm_1.Column()
     ], User.prototype, "firstName", void 0);
     __decorate([
@@ -21,7 +33,7 @@ var User = /** @class */ (function () {
     ], User.prototype, "lastName", void 0);
     __decorate([
         typeorm_1.Column()
-    ], User.prototype, "age", void 0);
+    ], User.prototype, "isAdmin", void 0);
     User = __decorate([
         typeorm_1.Entity()
     ], User);

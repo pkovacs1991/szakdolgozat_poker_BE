@@ -35,58 +35,71 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var express = require("express");
-var logger = require("morgan");
-var bodyParser = require("body-parser");
-require("reflect-metadata");
+var express_1 = require("express");
+var User_1 = require("../entity/User");
 var typeorm_1 = require("typeorm");
-var User_1 = require("./entity/User");
-var AuthRouter_1 = require("./routes/AuthRouter");
-// Creates and configures an ExpressJS web server.
-var App = /** @class */ (function () {
-    //Run configuration methods on the Express instance.
-    function App() {
-        var _this = this;
-        this.express = express();
-        this.middleware();
-        this.routes();
-        typeorm_1.createConnection().then(function (connection) { return __awaiter(_this, void 0, void 0, function () {
-            var users;
+var UserRepository_1 = require("../repository/UserRepository");
+var AuthRouter = /** @class */ (function () {
+    /**
+     * Initialize the AuthRouter
+     */
+    function AuthRouter() {
+        this.router = express_1.Router();
+        this.init();
+    }
+    /**
+     * Login user with Username and password.
+     */
+    AuthRouter.prototype.postLogin = function (req, res, next) {
+        return __awaiter(this, void 0, void 0, function () {
+            var userObject, userRepository, user;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("Loading users from the database...");
-                        return [4 /*yield*/, connection.manager.find(User_1.User)];
+                        userObject = req.body;
+                        console.log(userObject.username);
+                        userRepository = typeorm_1.getManager().getRepository(User_1.User);
+                        return [4 /*yield*/, userRepository.find(req.body)];
                     case 1:
-                        users = _a.sent();
-                        console.log("Loaded users: ", users);
+                        user = _a.sent();
+                        if (user.length == 1) {
+                            res.send("Success");
+                        }
+                        else {
+                            res.send("Fail");
+                        }
                         return [2 /*return*/];
                 }
             });
-        }); }).catch(function (error) { return console.log(error); });
-        console.log("Server started in localhost:3000");
-    }
-    // Configure Express middleware.
-    App.prototype.middleware = function () {
-        this.express.use(logger('dev'));
-        this.express.use(bodyParser.json());
-        this.express.use(bodyParser.urlencoded({ extended: false }));
-    };
-    // Configure API endpoints.
-    App.prototype.routes = function () {
-        /* This is just to get up and running, and to make sure what we've got is
-         * working so far. This function will change when we start to add more
-         * API endpoints */
-        var router = express.Router();
-        // placeholder route handler
-        router.get('/', function (req, res, next) {
-            res.json({
-                message: 'Hello World!'
-            });
         });
-        this.express.use('/', router);
-        this.express.use('/api/v1/auth', AuthRouter_1.default);
     };
-    return App;
+    /**
+     * Register a User.
+     */
+    AuthRouter.prototype.postRegister = function (req, res, next) {
+        var userObject = req.body;
+        var userRepository = typeorm_1.getManager().getCustomRepository(UserRepository_1.UserRepository);
+        var user = userRepository.createFromJson(userObject);
+        userRepository.save(user).then(function (user) {
+            console.log("User has been saved. User id is", user.id);
+            res.send("ok");
+        }).catch(function (error) {
+            console.log(error);
+            res.send("error");
+        });
+    };
+    /**
+     * Take each handler, and attach to one of the Express.Router's
+     * endpoints.
+     */
+    AuthRouter.prototype.init = function () {
+        this.router.post('/login', this.postLogin);
+        this.router.post('/register', this.postRegister);
+    };
+    return AuthRouter;
 }());
-exports.default = new App().express;
+exports.AuthRouter = AuthRouter;
+// Create the AuthRouter, and export its configured Express.Router
+var authRoutes = new AuthRouter();
+authRoutes.init();
+exports.default = authRoutes.router;
