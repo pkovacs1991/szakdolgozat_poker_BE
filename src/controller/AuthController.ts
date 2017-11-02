@@ -19,7 +19,12 @@ export class AuthController {
      */
      public async postLogin(req: Request, res: Response, next: NextFunction) {
 
-        let message = await AuthService.loginUser(req.body);
+        let message = await AuthService.loginUser(req);
+
+        if (message == "Fail") {
+
+            res.status(400);
+        }
         res.send(message);
     }
 
@@ -29,10 +34,25 @@ export class AuthController {
     public async postRegister(req: Request, res: Response, next: NextFunction) {
       
         let message = await AuthService.loginUser(req.body);
+
         res.send(message);
+
 
     }
 
+
+    /**
+     * Get the current User.
+     */
+    public async getUser(req: Request, res: Response, next: NextFunction) {
+
+        let message = await AuthService.currentUser(req);
+        res.header('Access-Control-Allow-Origin', 'localhost:4200');
+        res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+        res.header('Access-Control-Allow-Headers', 'Content-Type');
+        res.send(message);
+
+    }
 
 
     /**
@@ -42,6 +62,7 @@ export class AuthController {
     init() {
         this.router.post('/login', this.postLogin);
         this.router.post('/register',this.postRegister);
+        this.router.all('/currentUser',this.getUser);
     }
 
 }

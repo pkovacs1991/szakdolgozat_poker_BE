@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as express from 'express';
+import * as session from 'express-session';
 import * as logger from 'morgan';
 import * as bodyParser from 'body-parser';
 import "reflect-metadata";
@@ -37,6 +38,7 @@ class App {
     this.express.use(logger('dev'));
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
+    this.express.use(session({secret: 'ssshhhhh'}));
 
   }
 
@@ -51,6 +53,11 @@ class App {
       res.json({
         message: 'Hello World!'
       });
+    });
+    this.express.use(function(req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        next();
     });
     this.express.use('/', router);
     this.express.use('/api/v1/auth', AuthController);
