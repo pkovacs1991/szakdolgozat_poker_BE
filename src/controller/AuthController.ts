@@ -33,7 +33,7 @@ export class AuthController {
      */
     public async postRegister(req: Request, res: Response, next: NextFunction) {
       
-        let message = await AuthService.loginUser(req.body);
+        let message = await AuthService.registerUser(req.body);
 
         res.send(message);
 
