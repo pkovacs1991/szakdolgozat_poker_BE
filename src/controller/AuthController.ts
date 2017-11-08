@@ -25,7 +25,9 @@ export class AuthController {
 
             res.status(400);
         }
+        res.header('Content-type','application/json');
         res.send(message);
+
     }
 
     /**
@@ -34,7 +36,7 @@ export class AuthController {
     public async postRegister(req: Request, res: Response, next: NextFunction) {
       
         let message = await AuthService.registerUser(req.body);
-
+        res.header('Content-type','application/json');
         res.send(message);
 
 

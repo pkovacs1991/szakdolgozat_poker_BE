@@ -27,13 +27,10 @@ export module  AuthService {
     export async function  registerUser(userJSON) {
         const userRepository = getManager().getCustomRepository(UserRepository);
         let user = userRepository.createFromJson(userJSON);
-        userRepository.save(user).then(user => {
-            console.log("User has been saved. User id is", user.id);
-            return ("ok");
-        }).catch(error => {
-            console.log(error);
-            return ("error");
-        });
+        let newUser = await userRepository.save(user);
+        console.log("User has been saved. User id is", newUser.id);
+        return (newUser);
+
     }
 
 }
