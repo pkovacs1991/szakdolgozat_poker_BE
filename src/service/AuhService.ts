@@ -1,6 +1,8 @@
 import {User} from "../entity/User";
 import {getManager} from "typeorm";
 import {UserRepository} from "../repository/UserRepository";
+import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
+import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 
 export module  AuthService {
 
@@ -31,6 +33,33 @@ export module  AuthService {
         console.log("User has been saved. User id is", newUser.id);
         return (newUser);
 
+    }
+
+
+    export async function  isAdminLoggedIn(req) {
+        const userRepository = getManager().getRepository(User);
+        if(!req.session.userId) {
+            throw new NotAuthenticatedException();
+        }
+        let loggedInUser = await userRepository.findOneById(req.session.userId);
+
+
+        if ( !loggedInUser.isAdmin) {
+            throw new NotAuthoreizedException();
+        }
+
+    }
+
+    export async function  isLoggedIn(req) {
+        const userRepository = getManager().getRepository(User);
+        if(!req.session.userId) {
+            throw new NotAuthenticatedException();
+        }
+
+    }
+
+    export async function  logoutUser(req) {
+        req.session.userId = null;
     }
 
 }

@@ -1,4 +1,5 @@
-import {Entity, PrimaryGeneratedColumn, Column} from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from 'typeorm';
+import {PokerTable} from "./PokerTable";
 
 @Entity()
 export class User {
@@ -26,5 +27,8 @@ export class User {
 
     @Column()
     isAdmin: boolean;
+
+    @ManyToOne(type => PokerTable, pokerTable => pokerTable.users)
+    pokerTable: PokerTable;
 
 }

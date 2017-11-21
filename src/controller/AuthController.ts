@@ -2,7 +2,7 @@ import {Router, Request, Response, NextFunction} from 'express';
 import {AuthService} from "../service/AuhService";
 
 export class AuthController {
-    router: Router
+    router: Router;
 
     /**
      * Initialize the AuthController
@@ -38,6 +38,19 @@ export class AuthController {
         let message = await AuthService.registerUser(req.body);
         res.header('Content-type','application/json');
         res.send(message);
+
+
+    }
+
+    /**
+     * Register a User.
+     */
+    public async getLogout(req: Request, res: Response, next: NextFunction) {
+
+        await AuthService.logoutUser(req);
+
+        res.header('Content-type','application/json');
+        res.send({"response": "Logout Success"});
 
 
     }

@@ -7,6 +7,8 @@ import "reflect-metadata";
 import {createConnection} from "typeorm";
 import {User} from "./entity/User";
 import AuthController from './controller/AuthController'
+import UserController from "./controller/UserController";
+import PokerTableController from "./controller/PokerTableController";
 
 // Creates and configures an ExpressJS web server.
 class App {
@@ -61,8 +63,11 @@ class App {
     });
     this.express.use('/', router);
     this.express.use('/api/v1/auth', AuthController);
+    this.express.use('/api/v1/user', UserController);
+    this.express.use('/api/v1/table', PokerTableController);
   }
 
 }
 
 export default new App().express;
+
