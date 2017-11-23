@@ -1,10 +1,11 @@
+import {Request} from 'express';
 import {User} from "../entity/User";
 import {getManager} from "typeorm";
 import {UserRepository} from "../repository/UserRepository";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 
-export module  AuthService {
+export module AuthService {
 
     export async function loginUser(req) {
         let userJSON = req.body;
@@ -22,11 +23,14 @@ export module  AuthService {
 
     export async function currentUser(req) {
         const userRepository = getManager().getRepository(User);
+        await isLoggedIn(req);
         let user = await userRepository.findOneById(req.session.userId);
+        console.log(req.session.userId);
+        console.log(user);
         return user;
     }
 
-    export async function  registerUser(userJSON) {
+    export async function  registerUser(userJSON: JSON) {
         const userRepository = getManager().getCustomRepository(UserRepository);
         let user = userRepository.createFromJson(userJSON);
         let newUser = await userRepository.save(user);
@@ -38,11 +42,8 @@ export module  AuthService {
 
     export async function  isAdminLoggedIn(req) {
         const userRepository = getManager().getRepository(User);
-        if(!req.session.userId) {
-            throw new NotAuthenticatedException();
-        }
+        await isLoggedIn(req);
         let loggedInUser = await userRepository.findOneById(req.session.userId);
-
 
         if ( !loggedInUser.isAdmin) {
             throw new NotAuthoreizedException();
@@ -51,8 +52,8 @@ export module  AuthService {
     }
 
     export async function  isLoggedIn(req) {
-        const userRepository = getManager().getRepository(User);
         if(!req.session.userId) {
+            console.log(req.session.userId);
             throw new NotAuthenticatedException();
         }
 

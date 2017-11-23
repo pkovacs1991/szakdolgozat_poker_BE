@@ -1,5 +1,6 @@
 import {Router, Request, Response, NextFunction} from 'express';
 import {AuthService} from "../service/AuhService";
+import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 
 export class AuthController {
     router: Router;
@@ -61,12 +62,21 @@ export class AuthController {
      */
     public async getUser(req: Request, res: Response, next: NextFunction) {
 
-        let message = await AuthService.currentUser(req);
-        res.header('Access-Control-Allow-Origin', 'localhost:4200');
-        res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-        res.header('Access-Control-Allow-Headers', 'Content-Type');
-        res.send(message);
+        let message;
 
+        try {
+            message = await AuthService.currentUser(req);
+
+        } catch (e) {
+            if (e instanceof NotAuthenticatedException) {
+                message = {
+                    response: "Not authenticated"
+
+                };
+                res.status(403);
+            }
+        }
+            res.send(message);
     }
 
 

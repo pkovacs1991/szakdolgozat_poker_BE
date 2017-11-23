@@ -1,48 +1,46 @@
+import {Request} from 'express';
 import {PokerTable} from "../entity/PokerTable";
 import {getManager} from "typeorm";
 import {AuthService} from "./AuhService";
 import {PokerTableRepository} from "../repository/PokerTableRepository";
-import {UserRepository} from "../repository/UserRepository";
-import {RecordNotFoundException} from "../exception/RecordNotFoundException";
 import {User} from "../entity/User";
+import {PokerTableNotFoundException} from "../exception/PokerTableNotFoundException";
 
 
 
 export module  PokerTableService {
 
-   export async function getTables(req) {
+   export async function getTables(req: Request) {
         const pokerTableRepository = getManager().getRepository(PokerTable);
-        AuthService.isLoggedIn(req);
+        await AuthService.isLoggedIn(req);
         let pokerTable = await pokerTableRepository.find({relations: ["users"]});
 
         return pokerTable;
     }
 
-   export async function getTable(id, req) {
+   export async function getTable(id: number, req: Request) {
         const pokerTableRepository = getManager().getRepository(PokerTable);
-        AuthService.isLoggedIn(req);
+        await AuthService.isLoggedIn(req);
         let pokerTable = await pokerTableRepository.findOneById(id, {relations: ["users"]});
         return pokerTable;
    }
 
-    export async function createTable(pokerTableJSON, req) {
+    export async function createTable(pokerTableJSON: JSON, req: Request) {
         const pokerTableRepository = getManager().getCustomRepository(PokerTableRepository);
-        AuthService.isAdminLoggedIn(req);
+        await AuthService.isAdminLoggedIn(req);
         let pokerTable = pokerTableRepository.createFromJson(pokerTableJSON);
         pokerTable.users = new Array<User>();
         let newPokerTable = await pokerTableRepository.save(pokerTable);
-        console.log("Poker Table has been creater. Poker table id is", newPokerTable.id);
         return (newPokerTable);
     }
 
-    export async function updateTable(id, pokerTable, req) {
+    export async function updateTable(id: number, pokerTable: PokerTable, req: Request) {
         let response;
         const pokerTableRepository = getManager().getRepository(PokerTable);
-        AuthService.isAdminLoggedIn(req);
+        await AuthService.isAdminLoggedIn(req);
         await pokerTableRepository.updateById(id, pokerTable)
             .then(a => response = true)
             .catch(err => {
-                console.log(err);
                 response = false;
             });
 
@@ -51,102 +49,84 @@ export module  PokerTableService {
     }
 
 
-    export async function deletePokerTable(id, req) {
+    export async function deletePokerTable(id: number, req: Request) {
         let response = true;
         const pokerTableRepository = getManager().getRepository(PokerTable);
-        AuthService.isAdminLoggedIn(req);
+        await AuthService.isAdminLoggedIn(req);
         await pokerTableRepository.removeById(id)
             .then(a=>response = true)
             .catch(err => {
-                console.log(err);
                 response = false;
             });
         return response;
     }
 
-    export async function joinTable(id, userJson, req) {
+    export async function joinTable(id: number, req: Request) {
         let response = true;
         const pokerTableRepository = getManager().getRepository(PokerTable);
-        const userRepository = getManager().getRepository(User);
-        AuthService.isLoggedIn(req);
+        await AuthService.isLoggedIn(req);
         let pokerTable;
-        await pokerTableRepository.findOneById(id, {relations: ["users"]})
-            .then( success => {
-                pokerTable = success;
-                console.log(pokerTable);
-            })
-            .catch(err => {
-                console.log(err);
+        try {
+            pokerTable = await getPokerTable(id);
+        } catch(e) {
+            if(e instanceof  PokerTableNotFoundException) {
                 response = false;
-            });
-        let user;
-
-        await userRepository.findOneById(userJson.id) .then( success => {
-            user = success;
-            console.log(user);
-        })
-            .catch(err => {
-                console.log(err);
-                response = false;
-            });
-        console.log(pokerTable);
+            }
+        }
+        let user = await AuthService.currentUser(req);
         pokerTable.users.push(user);
+        console.log(pokerTable);
+        await pokerTableRepository.save(pokerTable);
+        return response;
+    }
 
-        console.log('after set', pokerTable);
 
+
+
+    export async function leaveTable(id: number, req: Request) {
+        let response = true;
+        const pokerTableRepository = getManager().getRepository(PokerTable);
+        await AuthService.isLoggedIn(req);
+        let pokerTable;
+        try {
+            pokerTable = await getPokerTable(id);
+        } catch(e) {
+            if(e instanceof  PokerTableNotFoundException) {
+                response = false;
+            }
+        }
+
+        let user = await AuthService.currentUser(req);
+        pokerTable = removeUserFromTable(pokerTable, user);
         await pokerTableRepository.save(pokerTable);
 
-
-
         return response;
+
     }
 
-
-    export async function leaveTable(id, userJson, req) {
-        let response = true;
-        const pokerTableRepository = getManager().getRepository(PokerTable);
-        const userRepository = getManager().getRepository(User);
-        AuthService.isLoggedIn(req);
-        let pokerTable;
-        await pokerTableRepository.findOneById(id, {relations: ["users"]})
-            .then( success => {
-                pokerTable = success;
-                console.log(pokerTable);
-            })
-            .catch(err => {
-                console.log(err);
-                response = false;
-            });
-        let user;
-
-        await userRepository.findOneById(userJson.id) .then( success => {
-            user = success;
-            console.log(user);
-        })
-            .catch(err => {
-                console.log(err);
-                response = false;
-            });
-        console.log(pokerTable);
-        console.log(user);
+    function removeUserFromTable(pokerTable: PokerTable, user: User) {
         var index;
-        for(var i = 0; i < pokerTable.users.length; i++ ) {
-            if(pokerTable.users[i].id == user.id) {
+        for (var i = 0; i < pokerTable.users.length; i++) {
+            if (pokerTable.users[i].id == user.id) {
                 index = i;
                 break;
             }
         }
-        console.log('index of users',index);
         if (index > -1) {
             pokerTable.users.splice(index, 1);
         }
+        return pokerTable;
+    }
 
-        console.log('after set', pokerTable);
-
-        await pokerTableRepository.save(pokerTable);
-
-        return response;
-
+    async function getPokerTable(id: number) {
+        const pokerTableRepository = getManager().getRepository(PokerTable);
+        return await pokerTableRepository.findOneById(id, {relations: ["users"]})
+            .then(table => {
+                return table;
+            })
+            .catch(err => {
+                throw new PokerTableNotFoundException();
+            });
     }
 
 }

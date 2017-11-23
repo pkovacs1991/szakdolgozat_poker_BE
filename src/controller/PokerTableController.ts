@@ -213,13 +213,13 @@ export class PokerTableController {
     /**
      * Join a user into a Poker table.
      */
-    public async putJoinTable(req: Request, res: Response, next: NextFunction) {
+    public async getJoinTable(req: Request, res: Response, next: NextFunction) {
 
         const id = req.params.id;
 
         let message;
         try {
-            let response = await PokerTableService.joinTable(id, req.body, req);
+            let response = await PokerTableService.joinTable(id, req);
             if (response) {
                 message = {
                     response: "Join Success!"
@@ -257,13 +257,13 @@ export class PokerTableController {
     /**
      * Leave a user from a Poker table.
      */
-    public async putLeaveTable(req: Request, res: Response, next: NextFunction) {
+    public async getLeaveTable(req: Request, res: Response, next: NextFunction) {
 
         const id = req.params.id;
 
         let message;
         try {
-            let response = await PokerTableService.leaveTable(id, req.body, req);
+            let response = await PokerTableService.leaveTable(id, req);
             if (response) {
                 message = {
                     response: "Leave Success!"
@@ -307,8 +307,8 @@ export class PokerTableController {
         this.router.post('/', this.postCreateTable);
         this.router.put('/:id',this.putUpdateTable);
         this.router.delete('/:id',this.deleteTable);
-        this.router.put('/join/:id',this.putJoinTable);
-        this.router.put('/leave/:id',this.putLeaveTable);
+        this.router.get('/join/:id',this.getJoinTable);
+        this.router.get('/leave/:id',this.getLeaveTable);
     }
 
 }
