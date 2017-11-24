@@ -29,6 +29,7 @@ export module  PokerTableService {
         const pokerTableRepository = getManager().getCustomRepository(PokerTableRepository);
         await AuthService.isAdminLoggedIn(req);
         let pokerTable = pokerTableRepository.createFromJson(pokerTableJSON);
+        pokerTable.actualBid = pokerTable.minBid;
         pokerTable.users = new Array<User>();
         let newPokerTable = await pokerTableRepository.save(pokerTable);
         return (newPokerTable);

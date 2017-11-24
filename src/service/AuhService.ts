@@ -4,19 +4,18 @@ import {getManager} from "typeorm";
 import {UserRepository} from "../repository/UserRepository";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
-
+import {encode,decode}  from 'jwt-simple'
 export module AuthService {
 
-    export async function loginUser(req) {
+    export async function loginUser(req): Promise<User> {
         let userJSON = req.body;
         console.log(req.body);
         const userRepository = getManager().getRepository(User);
         let user = await userRepository.findOne(userJSON);
         if(user) {
-            req.session.userId = user.id;
             return (user);
         } else {
-            return ("Fail");
+            return null;
         }
     }
 
@@ -24,8 +23,9 @@ export module AuthService {
     export async function currentUser(req) {
         const userRepository = getManager().getRepository(User);
         await isLoggedIn(req);
-        let user = await userRepository.findOneById(req.session.userId);
-        console.log(req.session.userId);
+        const id = getIdByToken(req);
+        let user = await userRepository.findOneById(id);
+        console.log(id);
         console.log(user);
         return user;
     }
@@ -43,7 +43,8 @@ export module AuthService {
     export async function  isAdminLoggedIn(req) {
         const userRepository = getManager().getRepository(User);
         await isLoggedIn(req);
-        let loggedInUser = await userRepository.findOneById(req.session.userId);
+        const id = getIdByToken(req);
+        let loggedInUser = await userRepository.findOneById(id);
 
         if ( !loggedInUser.isAdmin) {
             throw new NotAuthoreizedException();
@@ -52,16 +53,21 @@ export module AuthService {
     }
 
     export async function  isLoggedIn(req) {
-        if(!req.session.userId) {
-            console.log(req.session.userId);
+        const id = getIdByToken(req);
+        if(!id) {
             throw new NotAuthenticatedException();
         }
 
     }
 
-    export async function  logoutUser(req) {
-        req.session.userId = null;
+    function getIdByToken(req) {
+        const token = req.header('token');
+        var decoded = decode(token, 'secret', true);
+        console.log(decoded);
+        console.log(decoded.id);
+        return decoded.id;
     }
+
 
 }
 

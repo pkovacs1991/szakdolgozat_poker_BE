@@ -23,6 +23,17 @@ class App {
       createConnection().then(async connection => {
 
 
+          const admin = new User();
+          admin.id = 1;
+          admin.username = 'admin';
+          admin.password = '1234';
+          admin.email = 'admin@admin.com';
+          admin.balance = 500;
+          admin.firstName = 'admin';
+          admin.lastName = 'admin';
+          admin.isAdmin = true;
+
+          await admin.save();
           console.log("Loading users from the database...");
           const users = await connection.manager.find(User);
           console.log("Loaded users: ", users);
@@ -47,7 +58,7 @@ class App {
   private routes(): void {
     this.express.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, token");
         next();
     });
     this.express.use('/api/v1/auth', AuthController);

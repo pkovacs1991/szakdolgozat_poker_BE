@@ -1,10 +1,12 @@
 import {Router, Request, Response, NextFunction} from 'express';
 import {AuthService} from "../service/AuhService";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
+import {encode,decode}  from 'jwt-simple'
+import {User} from "../entity/User";
 
 export class AuthController {
     router: Router;
-
+    secret: string = 'secret';
     /**
      * Initialize the AuthController
      */
@@ -20,12 +22,25 @@ export class AuthController {
      */
      public async postLogin(req: Request, res: Response, next: NextFunction) {
 
-        let message = await AuthService.loginUser(req);
-
-        if (message == "Fail") {
-
+        let result = await AuthService.loginUser(req);
+        let message;
+        let token;
+        if (result) {
+            try {
+            token = encode({id: result.id}, 'secret');
+            console.log(token);
+            message = {
+                user: result,
+                token:token};
+            console.log(message);
+            } catch (e) {
+                console.log(e);
+            }
+        } else {
+            message = "Fail";
             res.status(400);
         }
+        console.log(message);
         res.header('Content-type','application/json');
         res.send(message);
 
@@ -39,19 +54,6 @@ export class AuthController {
         let message = await AuthService.registerUser(req.body);
         res.header('Content-type','application/json');
         res.send(message);
-
-
-    }
-
-    /**
-     * Register a User.
-     */
-    public async getLogout(req: Request, res: Response, next: NextFunction) {
-
-        await AuthService.logoutUser(req);
-
-        res.header('Content-type','application/json');
-        res.send({"response": "Logout Success"});
 
 
     }
