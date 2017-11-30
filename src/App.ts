@@ -2,18 +2,26 @@ import * as express from 'express';
 import * as session from 'express-session';
 import * as logger from 'morgan';
 import * as bodyParser from 'body-parser';
+import * as http from "http";
+import * as socketIo from "socket.io";
 import "reflect-metadata";
 import {createConnection} from "typeorm";
 import {User} from "./entity/User";
 import AuthController from './controller/AuthController'
 import UserController from "./controller/UserController";
 import PokerTableController from "./controller/PokerTableController";
+import {Message} from "./entity/Message";
+import {PokerService} from "./service/PokerService";
 
 // Creates and configures an ExpressJS web server.
 class App {
 
   // ref to Express instance
+  public static readonly PORT:number = 8080;
   public express: express.Application;
+  private server: any;
+  private io: any;
+  private port: string | number;
 
   //Run configuration methods on the Express instance.
   constructor() {
@@ -42,6 +50,11 @@ class App {
 
       }).catch(error => console.log(error));
 
+      this.server = http.createServer(this.express);
+      this.config()
+      this.sockets();
+      this.listen();
+
       console.log("Server started in localhost:3000");
   }
 
@@ -58,6 +71,7 @@ class App {
   private routes(): void {
     this.express.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, token");
         next();
     });
@@ -65,6 +79,41 @@ class App {
     this.express.use('/api/v1/user', UserController);
     this.express.use('/api/v1/table', PokerTableController);
   }
+
+
+  private config(): void {
+    this.port = process.env.PORT || App.PORT;
+  }
+
+  private sockets(): void {
+    this.io = socketIo(this.server)
+  }
+
+
+
+   private listen() {
+    this.server.listen(this.port, () => {
+        console.log('Running server on port %s', this.port);
+    });
+
+    let pokerService: PokerService = new PokerService();
+
+    this.io.on('connect', (socket: any) => {
+        console.log('Connected client on port %s.', this.port);
+        socket.on('message', async (m: Message) => {
+            m = await pokerService.handleMessage(m);
+
+            console.log('[server](message): %s', JSON.stringify(m));
+            this.io.emit('message', m);
+
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Client disconnected');
+        });
+    });
+  }
+
 
 }
 

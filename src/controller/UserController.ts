@@ -148,6 +148,42 @@ export class UserController {
     }
 
 
+    /**
+     * Get the Users.
+     */
+    public async getUsers(req: Request, res: Response, next: NextFunction) {
+        let message;
+
+        try {
+            message = await UserService.getUsers( req);
+
+
+        } catch (e) {
+            if(e instanceof NotAuthenticatedException){
+                message = {
+                    response: "Not authenticated"
+
+                };
+                res.status(403);
+            }
+            if(e instanceof NotAuthoreizedException){
+                message = {
+                    response: "Not Authorized"
+
+                };
+                res.status(403);
+            }
+        }
+
+
+
+        console.log(message);
+        res.header('Content-type','application/json');
+        res.send(message);
+
+    }
+
+
 
 
 
@@ -159,6 +195,7 @@ export class UserController {
         this.router.put('/:id', this.putModify);
         this.router.delete('/:id',this.deleteUser);
         this.router.get('/:id',this.getUser);
+        this.router.get('',this.getUsers);
 
     }
 

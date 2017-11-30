@@ -14,6 +14,15 @@ export module  UserService {
         return user;
     }
 
+
+    export async function getUsers( req: Request) {
+        const userRepository = getManager().getRepository(User);
+        await AuthService.isAdminLoggedIn(req);
+        let users = await userRepository.find();
+        console.log(users);
+        return users;
+    }
+
     export async function deleteUser(id: number, req: Request) {
         let response;
         const userRepository = getManager().getRepository(User);
@@ -30,7 +39,7 @@ export module  UserService {
     export async function modifyUser(id: number, user: User, req: Request) {
         let response;
         const userRepository = getManager().getRepository(User);
-        await AuthService.isAdminLoggedIn(req);
+        await AuthService.isLoggedIn(req);
         await userRepository.updateById(id, user)
             .then(a => response = true)
             .catch(err => {

@@ -50,7 +50,7 @@ export class AuthController {
      * Register a User.
      */
     public async postRegister(req: Request, res: Response, next: NextFunction) {
-      
+        console.log(req);
         let message = await AuthService.registerUser(req.body);
         res.header('Content-type','application/json');
         res.send(message);
