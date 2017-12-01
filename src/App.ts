@@ -105,7 +105,11 @@ class App {
 
             console.log('[server](message): %s', JSON.stringify(m));
             this.io.emit('message', m);
-
+            if(pokerService.isNew) {
+                console.log('[server](message): %s', JSON.stringify(m));
+                this.io.emit('message', new Message(m.from, JSON.stringify(pokerService.tableStatus)));
+                pokerService.isNew = false;
+            }
         });
 
         socket.on('disconnect', () => {
