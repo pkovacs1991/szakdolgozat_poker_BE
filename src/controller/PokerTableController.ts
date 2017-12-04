@@ -104,7 +104,6 @@ export class PokerTableController {
     public async deleteTable(req: Request, res: Response, next: NextFunction) {
 
         const id = req.params.id;
-        console.log(req.params.id);
         let message;
         try {
             let response = await PokerTableService.deletePokerTable(id, req);

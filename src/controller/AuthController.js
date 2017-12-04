@@ -36,38 +36,49 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = require("express");
-var User_1 = require("../entity/User");
-var typeorm_1 = require("typeorm");
-var UserRepository_1 = require("../repository/UserRepository");
-var AuthRouter = /** @class */ (function () {
+var AuhService_1 = require("../service/AuhService");
+var NotAuthenticatedException_1 = require("../exception/NotAuthenticatedException");
+var jwt_simple_1 = require("jwt-simple");
+var AuthController = /** @class */ (function () {
     /**
-     * Initialize the AuthRouter
+     * Initialize the AuthController
      */
-    function AuthRouter() {
+    function AuthController() {
+        this.secret = 'secret';
         this.router = express_1.Router();
         this.init();
     }
     /**
      * Login user with Username and password.
      */
-    AuthRouter.prototype.postLogin = function (req, res, next) {
+    AuthController.prototype.postLogin = function (req, res, next) {
         return __awaiter(this, void 0, void 0, function () {
-            var userObject, userRepository, user;
+            var result, message, token;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        userObject = req.body;
-                        console.log(userObject.username);
-                        userRepository = typeorm_1.getManager().getRepository(User_1.User);
-                        return [4 /*yield*/, userRepository.find(req.body)];
+                    case 0: return [4 /*yield*/, AuhService_1.AuthService.loginUser(req)];
                     case 1:
-                        user = _a.sent();
-                        if (user.length == 1) {
-                            res.send("Success");
+                        result = _a.sent();
+                        if (result) {
+                            try {
+                                token = jwt_simple_1.encode({ id: result.id }, 'secret');
+                                message = {
+                                    user: result,
+                                    token: token
+                                };
+                                console.log(message);
+                            }
+                            catch (e) {
+                                console.log(e);
+                            }
                         }
                         else {
-                            res.send("Fail");
+                            message = "Fail";
+                            res.status(400);
                         }
+                        console.log(message);
+                        res.header('Content-type', 'application/json');
+                        res.send(message);
                         return [2 /*return*/];
                 }
             });
@@ -76,30 +87,66 @@ var AuthRouter = /** @class */ (function () {
     /**
      * Register a User.
      */
-    AuthRouter.prototype.postRegister = function (req, res, next) {
-        var userObject = req.body;
-        var userRepository = typeorm_1.getManager().getCustomRepository(UserRepository_1.UserRepository);
-        var user = userRepository.createFromJson(userObject);
-        userRepository.save(user).then(function (user) {
-            console.log("User has been saved. User id is", user.id);
-            res.send("ok");
-        }).catch(function (error) {
-            console.log(error);
-            res.send("error");
+    AuthController.prototype.postRegister = function (req, res, next) {
+        return __awaiter(this, void 0, void 0, function () {
+            var message;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log(req);
+                        return [4 /*yield*/, AuhService_1.AuthService.registerUser(req.body)];
+                    case 1:
+                        message = _a.sent();
+                        res.header('Content-type', 'application/json');
+                        res.send(message);
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
+     * Get the current User.
+     */
+    AuthController.prototype.getUser = function (req, res, next) {
+        return __awaiter(this, void 0, void 0, function () {
+            var message, e_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, AuhService_1.AuthService.currentUser(req)];
+                    case 1:
+                        message = _a.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        e_1 = _a.sent();
+                        if (e_1 instanceof NotAuthenticatedException_1.NotAuthenticatedException) {
+                            message = {
+                                response: "Not authenticated"
+                            };
+                            res.status(403);
+                        }
+                        return [3 /*break*/, 3];
+                    case 3:
+                        res.send(message);
+                        return [2 /*return*/];
+                }
+            });
         });
     };
     /**
      * Take each handler, and attach to one of the Express.Router's
      * endpoints.
      */
-    AuthRouter.prototype.init = function () {
+    AuthController.prototype.init = function () {
         this.router.post('/login', this.postLogin);
         this.router.post('/register', this.postRegister);
+        this.router.all('/currentUser', this.getUser);
     };
-    return AuthRouter;
+    return AuthController;
 }());
-exports.AuthRouter = AuthRouter;
-// Create the AuthRouter, and export its configured Express.Router
-var authRoutes = new AuthRouter();
-authRoutes.init();
-exports.default = authRoutes.router;
+exports.AuthController = AuthController;
+// Create the AuthController, and export its configured Express.Router
+var authController = new AuthController();
+authController.init();
+exports.default = authController.router;

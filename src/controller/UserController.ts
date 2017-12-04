@@ -176,8 +176,6 @@ export class UserController {
         }
 
 
-
-        console.log(message);
         res.header('Content-type','application/json');
         res.send(message);
 

@@ -9,7 +9,6 @@ export module AuthService {
 
     export async function loginUser(req): Promise<User> {
         let userJSON = req.body;
-        console.log(req.body);
         const userRepository = getManager().getRepository(User);
         let user = await userRepository.findOne(userJSON);
         if(user) {
@@ -25,8 +24,6 @@ export module AuthService {
         await isLoggedIn(req);
         const id = getIdByToken(req);
         let user = await userRepository.findOneById(id);
-        console.log(id);
-        console.log(user);
         return user;
     }
 
@@ -61,7 +58,7 @@ export module AuthService {
 
     }
 
-    function getIdByToken(req) {
+    export function getIdByToken(req) {
         const token = req.header('token');
         var decoded = decode(token, 'secret', true);
         console.log(decoded);

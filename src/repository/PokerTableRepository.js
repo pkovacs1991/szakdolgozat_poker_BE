@@ -17,42 +17,27 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var typeorm_1 = require("typeorm");
-var PokerTable_1 = require("./PokerTable");
-var User = /** @class */ (function (_super) {
-    __extends(User, _super);
-    function User() {
+var typeorm_2 = require("typeorm");
+var PokerTable_1 = require("../entity/PokerTable");
+/**
+ * Second type of custom repository - extends standard repository.
+ */
+var PokerTableRepository = /** @class */ (function (_super) {
+    __extends(PokerTableRepository, _super);
+    function PokerTableRepository() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    __decorate([
-        typeorm_1.PrimaryGeneratedColumn()
-    ], User.prototype, "id", void 0);
-    __decorate([
-        typeorm_1.Column({ unique: true })
-    ], User.prototype, "username", void 0);
-    __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "password", void 0);
-    __decorate([
-        typeorm_1.Column({ unique: true })
-    ], User.prototype, "email", void 0);
-    __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "balance", void 0);
-    __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "firstName", void 0);
-    __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "lastName", void 0);
-    __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "isAdmin", void 0);
-    __decorate([
-        typeorm_1.ManyToOne(function (type) { return PokerTable_1.PokerTable; }, function (pokerTable) { return pokerTable.users; })
-    ], User.prototype, "pokerTable", void 0);
-    User = __decorate([
-        typeorm_1.Entity()
-    ], User);
-    return User;
-}(typeorm_1.BaseEntity));
-exports.User = User;
+    PokerTableRepository.prototype.createFromJson = function (json) {
+        var pokerTable = this.create();
+        pokerTable.maxBid = json.maxBid;
+        pokerTable.minBid = json.minBid;
+        pokerTable.name = json.name;
+        pokerTable.users = json.users;
+        return pokerTable;
+    };
+    PokerTableRepository = __decorate([
+        typeorm_2.EntityRepository(PokerTable_1.PokerTable)
+    ], PokerTableRepository);
+    return PokerTableRepository;
+}(typeorm_1.Repository));
+exports.PokerTableRepository = PokerTableRepository;

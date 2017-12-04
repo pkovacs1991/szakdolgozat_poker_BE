@@ -17,42 +17,33 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var typeorm_1 = require("typeorm");
-var PokerTable_1 = require("./PokerTable");
-var User = /** @class */ (function (_super) {
-    __extends(User, _super);
-    function User() {
+var User_1 = require("./User");
+var PokerTable = /** @class */ (function (_super) {
+    __extends(PokerTable, _super);
+    function PokerTable() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     __decorate([
         typeorm_1.PrimaryGeneratedColumn()
-    ], User.prototype, "id", void 0);
+    ], PokerTable.prototype, "id", void 0);
     __decorate([
         typeorm_1.Column({ unique: true })
-    ], User.prototype, "username", void 0);
+    ], PokerTable.prototype, "name", void 0);
     __decorate([
         typeorm_1.Column()
-    ], User.prototype, "password", void 0);
-    __decorate([
-        typeorm_1.Column({ unique: true })
-    ], User.prototype, "email", void 0);
+    ], PokerTable.prototype, "minBid", void 0);
     __decorate([
         typeorm_1.Column()
-    ], User.prototype, "balance", void 0);
+    ], PokerTable.prototype, "maxBid", void 0);
     __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "firstName", void 0);
+        typeorm_1.Column({ nullable: true })
+    ], PokerTable.prototype, "actualBid", void 0);
     __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "lastName", void 0);
-    __decorate([
-        typeorm_1.Column()
-    ], User.prototype, "isAdmin", void 0);
-    __decorate([
-        typeorm_1.ManyToOne(function (type) { return PokerTable_1.PokerTable; }, function (pokerTable) { return pokerTable.users; })
-    ], User.prototype, "pokerTable", void 0);
-    User = __decorate([
+        typeorm_1.OneToMany(function (type) { return User_1.User; }, function (user) { return user.pokerTable; })
+    ], PokerTable.prototype, "users", void 0);
+    PokerTable = __decorate([
         typeorm_1.Entity()
-    ], User);
-    return User;
+    ], PokerTable);
+    return PokerTable;
 }(typeorm_1.BaseEntity));
-exports.User = User;
+exports.PokerTable = PokerTable;

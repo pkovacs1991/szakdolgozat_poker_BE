@@ -96,21 +96,43 @@ class App {
         console.log('Running server on port %s', this.port);
     });
 
-    let pokerService: PokerService = new PokerService();
+    let pokerServices: PokerService[] = [];
 
     this.io.on('connect', (socket: any) => {
         console.log('Connected client on port %s.', this.port);
         socket.on('message', async (m: Message) => {
+            let content: string;
+            let contentJSON = JSON.parse(m.content);
+            console.log('aaaaaaa', m);
+            const tableId = contentJSON.table;
+            let pokerService: PokerService = null;
+            for(let i = 0; i < pokerServices.length; i++) {
+                if(pokerServices[i].tableId === tableId) {
+                    pokerService = pokerServices[i];
+                }
+            }
+            console.log(pokerService);
+            if (!pokerService) {
+                pokerService = new PokerService(tableId);
+                pokerServices.push(pokerService);
+            }
+            if( contentJSON.action === 'JOINED') {
+                socket.join(contentJSON.table);
+                console.log('joined.');
+            }
             m = await pokerService.handleMessage(m);
-
-            console.log('[server](message): %s', JSON.stringify(m));
-            this.io.emit('message', m);
-            if(pokerService.isNew) {
-                console.log('[server](message): %s', JSON.stringify(m));
-                this.io.emit('message', new Message(m.from, JSON.stringify(pokerService.tableStatus)));
+            //console.log('[server](message): %s', JSON.stringify(m));
+            console.log(contentJSON.table);
+            this.io.to(contentJSON.table).emit('message', m);
+            if (pokerService.isNew) {
+                //console.log('[server](message): %s', JSON.stringify(m));
+                this.io.to(contentJSON.table).emit('message', new Message(m.from, JSON.stringify(pokerService.tableStatus)));
                 pokerService.isNew = false;
             }
+
         });
+
+
 
         socket.on('disconnect', () => {
             console.log('Client disconnected');

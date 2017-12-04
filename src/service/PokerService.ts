@@ -3,6 +3,17 @@ import {User} from "../entity/User";
 import {Message} from "../entity/Message";
 import {PokerTable} from "../entity/PokerTable";
 import {getManager} from "typeorm";
+import {AuthService} from "./AuhService";
+import currentUser = AuthService.currentUser;
+import {Action} from "../entity/Action";
+import {PossibleRaiseAction} from "../entity/PossibleRaiseAction";
+import {Status} from "../entity/Status";
+import {EvaluateHandService} from "./EvaluateHandService";
+import evaluateWinner = EvaluateHandService.evaluateWinner;
+import {emptyCompilationResult} from "gulp-typescript/release/reporter";
+import {ResultHand} from "../entity/ResultHand";
+import {endianness} from "os";
+import {isWorker} from "cluster";
 
 export class PokerService {
 
@@ -10,8 +21,9 @@ export class PokerService {
     tableStatus: TableStatus;
     users: User[] = [];
     isNew: boolean = false;
-    constructor() {
-
+    tableId: number;
+    constructor(tableId: number) {
+        this.tableId = tableId;
     }
 
     async joinUser(user: User) {
@@ -21,9 +33,8 @@ export class PokerService {
 
         if (this.users.length > 1) {
             if (this.users.length == 2 && !this.tableStatus) {
-                const tableId = 4
 
-                await this.newGame(0, tableId);
+                await this.newGame(0, this.tableId);
 
             }
             return JSON.stringify(this.tableStatus);
@@ -34,22 +45,131 @@ export class PokerService {
 
 
     async foldUser(user: User) {
-       this.nextUser();
+
        let users = this.tableStatus.activeUsers;
        for (let i = 0; i < users.length; i++) {
            if(user.id === users[i].id) {
+               this.tableStatus.removeUserFromUserAction(user);
                users.splice(i, 1);
                break;
            }
        }
-       console.log('ussserrres',this.users);
+
        if(users.length === 1) {
            return await this.endGame();
-       } else {
 
+       } else if(!this.canAnyOneRaise()) {
+           await this.nextStatus();
+           return JSON.stringify(this.tableStatus);
+       } else {
+           this.nextUser();
            return JSON.stringify(this.tableStatus);
        }
 
+    }
+
+    async callUser(user: User) {
+        const userRepository = getManager().getRepository(User);
+        for(let i = 0; i < this.tableStatus.userBets.length; i++) {
+            let userBet = this.tableStatus.userBets[i];
+            if(userBet.user.id === user.id) {
+                this.tableStatus.pot+= this.tableStatus.currentBet - userBet.currentBet;
+                user.balance -= this.tableStatus.currentBet - userBet.currentBet;
+                userBet.bet+= this.tableStatus.currentBet - userBet.currentBet;
+                userBet.currentBet = this.tableStatus.currentBet;
+                await userRepository.save(user);
+            }
+        }
+
+        this.emptyUserAction(user);
+        console.log(this.tableStatus.possibleRaiseActions);
+        console.log(this.canAnyOneRaise());
+        if(!this.canAnyOneRaise()) {
+            await this.nextStatus();
+        } else {
+            this.nextUser();
+        }
+        return JSON.stringify(this.tableStatus);
+    }
+
+    async raiseUser(user: User, amount: number) {
+        const userRepository = getManager().getRepository(User);
+        for(let i = 0; i < this.tableStatus.userBets.length; i++) {
+            let userBet = this.tableStatus.userBets[i];
+            if(userBet.user.id === user.id) {
+
+                this.tableStatus.pot+=  +amount;
+                user.balance -= +amount;
+                userBet.bet+= +amount;
+                this.tableStatus.currentBet = +amount + userBet.currentBet;
+                userBet.currentBet += +amount;
+                await userRepository.save(user);
+            }
+        }
+
+        this.setCallUsersAction(user);
+        console.log(this.tableStatus.possibleRaiseActions);
+
+        this.nextUser();
+        return JSON.stringify(this.tableStatus);
+    }
+
+
+    async checkUser(user: User) {
+
+        this.emptyUserAction(user);
+        if(!this.canAnyOneRaise()) {
+            await this.nextStatus();
+        } else {
+            this.nextUser();
+        }
+        return JSON.stringify(this.tableStatus);
+    }
+
+    private emptyUserAction(user: User) {
+        let possibleRaiseActions = this.tableStatus.possibleRaiseActions;
+        for (let i = 0; i < possibleRaiseActions.length; i++) {
+            if(user.id === possibleRaiseActions[i].user.id) {
+
+                possibleRaiseActions[i].actions = [];
+                break;
+            }
+        }
+    }
+
+    private setCallUsersAction(user: User) {
+        this.emptyUserAction(user);
+        let possibleRaiseActions = this.tableStatus.possibleRaiseActions;
+        for (let i = 0; i < possibleRaiseActions.length; i++) {
+            if(user.id !== possibleRaiseActions[i].user.id) {
+                this.addRaiseOption(possibleRaiseActions[i],Action.CALL);
+            }
+        }
+    }
+
+    private addRaiseOption(possibleRaiseAction: PossibleRaiseAction, action: Action) {
+        let containAction: boolean = false;
+        for(let i = 0; i < possibleRaiseAction.actions.length; i++) {
+            if(possibleRaiseAction.actions[i] === action) {
+                containAction = true;
+            }
+        }
+        if (!containAction) {
+            possibleRaiseAction.actions.push(action);
+        }
+    }
+
+    private canAnyOneRaise(): boolean {
+        let canRaise = false;
+        let possibleRaiseActions = this.tableStatus.possibleRaiseActions;
+        for (let i = 0; i < possibleRaiseActions.length; i++) {
+            if(possibleRaiseActions[i].actions.length > 0) {
+                canRaise = true;
+                break;
+            }
+        }
+
+        return canRaise;
     }
 
     private nextUser() {
@@ -57,17 +177,29 @@ export class PokerService {
         for (let i = 0; i < users.length; i++) {
             if(this.tableStatus.turn.id === users[i].id) {
                 this.tableStatus.turn = users[this.nextActiveIndex(i)];
+                break;
             }
         }
     }
 
     private nextActiveIndex(index: number): number {
+
         return index + 1 < this.tableStatus.activeUsers.length ? index + 1 : 0;
     }
 
     private nextIndex(index: number): number {
         return index + 1 < this.users.length ? index + 1 : 0;
     }
+
+
+    async nextStatus() {
+        if(this.tableStatus.status === Status.RIVER) {
+           await this.endGame();
+        } else {
+            this.tableStatus.doNextStatus();
+        }
+    }
+
 
     async newGame(dealer: number, tableId: number) {
 
@@ -90,32 +222,53 @@ export class PokerService {
     }
 
     async endGame() {
-        let winner;
+        let winners: User[] = [];
         if (this.tableStatus.activeUsers.length == 1) {
-            winner = this.tableStatus.activeUsers[0];
+            winners.push(this.tableStatus.activeUsers[0]);
+        } else {
+            const resultHand: ResultHand[] = evaluateWinner(this.tableStatus.hand, this.tableStatus.tableCards);
+            console.log(resultHand);
+            console.log(resultHand[0].cards);
+            for(let i = 0; i < resultHand.length; i++) {
+                winners.push(resultHand[i].user);
+            }
         }
 
-       await this.handleMoney(winner);
+       await this.handleMoney(winners);
        this.tableStatus.isEnd = true;
-       return JSON.stringify({winner: winner});
+       return JSON.stringify({winner: winners});
 
     }
 
-    private async handleMoney(winner: User) {
+    private async handleMoney(winners: User[]) {
         const userRepository = getManager().getRepository(User);
         for(let i = 0; i < this.tableStatus.users.length; i++) {
             let user = this.tableStatus.users[i];
-            if(user.id != winner.id) {
+            if(!this.isWinner(this.tableStatus.users[i], winners)) {
                 const userBet = this.getUserBet(user);
                 user.balance = user.balance - userBet;
                 await userRepository.save(user);
 
             }
         }
-        let user: User = winner;
-        user.balance += this.tableStatus.pot;
-        await userRepository.save(user);
+        let winPot:number = Math.floor(this.tableStatus.pot / winners.length);
+        for(let i = 0; i < winners.length; i++) {
+            let user: User = winners[i];
+            user.balance += winPot;
+            console.log(user.balance);
+            await userRepository.save(user);
+        }
     }
+
+    private isWinner(user: User, winners: User[]) {
+        for(let i = 0; i < winners.length; i++) {
+            if(winners[i].id === user.id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private getUserBet(user: User): number {
         let userBet = 0;
@@ -134,15 +287,37 @@ export class PokerService {
         console.log(contentJSON.action);
         if(contentJSON.action === 'JOINED') {
             content = await this.joinUser(message.from);
-        }
-        else if(contentJSON.action === 'FOLD') {
+        } else if(contentJSON.action === 'FOLD') {
             console.log('call fold')
             content = await this.foldUser(message.from);
             if (this.tableStatus.isEnd) {
 
-                await this.newGame(this.nextIndex(this.dealer),4 );
+                await this.newGame(this.nextIndex(this.dealer), this.tableId);
                 this.isNew = true;
             }
+
+        } else if(contentJSON.action === 'CHECK') {
+            console.log('call check')
+            content = await this.checkUser(message.from);
+            if (this.tableStatus.isEnd) {
+
+                await this.newGame(this.nextIndex(this.dealer), this.tableId);
+                this.isNew = true;
+            }
+
+        } else if(contentJSON.action === 'CALL') {
+            console.log('call call')
+            content = await this.callUser(message.from);
+            if (this.tableStatus.isEnd) {
+
+                await this.newGame(this.nextIndex(this.dealer), this.tableId);
+                this.isNew = true;
+            }
+
+        } else if(contentJSON.action === 'RAISE') {
+            console.log('call raise' + message.from.username);
+            content = await this.raiseUser(message.from, contentJSON.amount);
+
         } else {
             content = JSON.stringify({message: 'bad message'})
         }

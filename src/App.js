@@ -36,12 +36,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express = require("express");
+var session = require("express-session");
 var logger = require("morgan");
 var bodyParser = require("body-parser");
+var http = require("http");
+var socketIo = require("socket.io");
 require("reflect-metadata");
 var typeorm_1 = require("typeorm");
 var User_1 = require("./entity/User");
-var AuthRouter_1 = require("./routes/AuthRouter");
+var AuthController_1 = require("./controller/AuthController");
+var UserController_1 = require("./controller/UserController");
+var PokerTableController_1 = require("./controller/PokerTableController");
+var Message_1 = require("./entity/Message");
+var PokerService_1 = require("./service/PokerService");
 // Creates and configures an ExpressJS web server.
 var App = /** @class */ (function () {
     //Run configuration methods on the Express instance.
@@ -51,19 +58,35 @@ var App = /** @class */ (function () {
         this.middleware();
         this.routes();
         typeorm_1.createConnection().then(function (connection) { return __awaiter(_this, void 0, void 0, function () {
-            var users;
+            var admin, users;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        admin = new User_1.User();
+                        admin.id = 1;
+                        admin.username = 'admin';
+                        admin.password = '1234';
+                        admin.email = 'admin@admin.com';
+                        admin.balance = 500;
+                        admin.firstName = 'admin';
+                        admin.lastName = 'admin';
+                        admin.isAdmin = true;
+                        return [4 /*yield*/, admin.save()];
+                    case 1:
+                        _a.sent();
                         console.log("Loading users from the database...");
                         return [4 /*yield*/, connection.manager.find(User_1.User)];
-                    case 1:
+                    case 2:
                         users = _a.sent();
                         console.log("Loaded users: ", users);
                         return [2 /*return*/];
                 }
             });
         }); }).catch(function (error) { return console.log(error); });
+        this.server = http.createServer(this.express);
+        this.config();
+        this.sockets();
+        this.listen();
         console.log("Server started in localhost:3000");
     }
     // Configure Express middleware.
@@ -71,22 +94,58 @@ var App = /** @class */ (function () {
         this.express.use(logger('dev'));
         this.express.use(bodyParser.json());
         this.express.use(bodyParser.urlencoded({ extended: false }));
+        this.express.use(session({ secret: 'ssshhhhh', resave: false, saveUninitialized: true }));
     };
     // Configure API endpoints.
     App.prototype.routes = function () {
-        /* This is just to get up and running, and to make sure what we've got is
-         * working so far. This function will change when we start to add more
-         * API endpoints */
-        var router = express.Router();
-        // placeholder route handler
-        router.get('/', function (req, res, next) {
-            res.json({
-                message: 'Hello World!'
+        this.express.use(function (req, res, next) {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, token");
+            next();
+        });
+        this.express.use('/api/v1/auth', AuthController_1.default);
+        this.express.use('/api/v1/user', UserController_1.default);
+        this.express.use('/api/v1/table', PokerTableController_1.default);
+    };
+    App.prototype.config = function () {
+        this.port = process.env.PORT || App.PORT;
+    };
+    App.prototype.sockets = function () {
+        this.io = socketIo(this.server);
+    };
+    App.prototype.listen = function () {
+        var _this = this;
+        this.server.listen(this.port, function () {
+            console.log('Running server on port %s', _this.port);
+        });
+        var pokerService = new PokerService_1.PokerService();
+        this.io.on('connect', function (socket) {
+            console.log('Connected client on port %s.', _this.port);
+            socket.on('message', function (m) { return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, pokerService.handleMessage(m)];
+                        case 1:
+                            m = _a.sent();
+                            //console.log('[server](message): %s', JSON.stringify(m));
+                            this.io.emit('message', m);
+                            if (pokerService.isNew) {
+                                //console.log('[server](message): %s', JSON.stringify(m));
+                                this.io.emit('message', new Message_1.Message(m.from, JSON.stringify(pokerService.tableStatus)));
+                                pokerService.isNew = false;
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            }); });
+            socket.on('disconnect', function () {
+                console.log('Client disconnected');
             });
         });
-        this.express.use('/', router);
-        this.express.use('/api/v1/auth', AuthRouter_1.default);
     };
+    // ref to Express instance
+    App.PORT = 8080;
     return App;
 }());
 exports.default = new App().express;

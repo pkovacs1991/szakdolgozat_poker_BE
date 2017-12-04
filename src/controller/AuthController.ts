@@ -28,11 +28,9 @@ export class AuthController {
         if (result) {
             try {
             token = encode({id: result.id}, 'secret');
-            console.log(token);
             message = {
                 user: result,
                 token:token};
-            console.log(message);
             } catch (e) {
                 console.log(e);
             }
@@ -40,7 +38,6 @@ export class AuthController {
             message = "Fail";
             res.status(400);
         }
-        console.log(message);
         res.header('Content-type','application/json');
         res.send(message);
 
@@ -50,7 +47,6 @@ export class AuthController {
      * Register a User.
      */
     public async postRegister(req: Request, res: Response, next: NextFunction) {
-        console.log(req);
         let message = await AuthService.registerUser(req.body);
         res.header('Content-type','application/json');
         res.send(message);
