@@ -244,12 +244,10 @@ export class PokerService {
         const userRepository = getManager().getRepository(User);
         for(let i = 0; i < this.tableStatus.users.length; i++) {
             let user = this.tableStatus.users[i];
-            if(!this.isWinner(this.tableStatus.users[i], winners)) {
                 const userBet = this.getUserBet(user);
                 user.balance = user.balance - userBet;
                 await userRepository.save(user);
 
-            }
         }
         let winPot:number = Math.floor(this.tableStatus.pot / winners.length);
         for(let i = 0; i < winners.length; i++) {

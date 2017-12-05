@@ -58,6 +58,29 @@ export module  UserService {
         return response;
     }
 
+
+    export async function resetBalance(req: Request) {
+        let response;
+        console.log('im here');
+        const loggedInUserId = AuthService.getIdByToken(req);
+        const userRepository = getManager().getRepository(User);
+        let loggedInUser = await userRepository.findOneById(loggedInUserId);
+        if (loggedInUser.balance < 500) {
+            loggedInUser.balance = 500;
+        }
+        await AuthService.isLoggedIn(req);
+        await userRepository.updateById(loggedInUser.id, loggedInUser)
+            .then(a => response = true)
+            .catch(err => {
+                console.log('here comes the error', err);
+                response = false;
+            });
+
+        return response;
+    }
+
+
+
     export async function checkForUniques(user: User) {
         const userRepository = getManager().getRepository(User);
         const usersUniqueUserName: User[] = await userRepository.find({username: user.username});

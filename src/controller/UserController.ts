@@ -182,6 +182,42 @@ export class UserController {
     }
 
 
+    /**
+     * Get the Users.
+     */
+    public async getResetBalance(req: Request, res: Response, next: NextFunction) {
+        let message;
+
+        try {
+            let response = await UserService.resetBalance( req);
+            if (response) {
+                message = {
+                    response: "Reset balance success!"
+                };
+            } else {
+                message = {
+                    response: "Reset balance Failed!"
+
+                };
+                res.status(400);
+            }
+
+        } catch (e) {
+            if(e instanceof NotAuthenticatedException){
+                message = {
+                    response: "Not authenticated"
+
+                };
+                res.status(403);
+            }
+        }
+
+
+        res.header('Content-type','application/json');
+        res.send(message);
+
+    }
+
 
 
 
@@ -192,6 +228,7 @@ export class UserController {
     init() {
         this.router.put('/:id', this.putModify);
         this.router.delete('/:id',this.deleteUser);
+        this.router.get('/resetBalance',this.getResetBalance);
         this.router.get('/:id',this.getUser);
         this.router.get('',this.getUsers);
 
