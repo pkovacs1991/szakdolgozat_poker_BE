@@ -26,7 +26,7 @@ export class TableStatus {
     tableCards: Card[] = [];
     possibleRaiseActions: PossibleRaiseAction[] = [];
     isEnd: boolean;
-
+    message: string;
 
     constructor(smallBlind:User,
     bigBlind: User,

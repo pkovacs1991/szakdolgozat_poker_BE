@@ -1,17 +1,17 @@
 
 export enum Rank {
 
-    HIGH_CARD = 'HIGH_CARD',
-    PAIR = 'PAIR',
-    TWO_PAIR = 'TWO_PAIR',
-    THREE_OF_A_KIND = 'THREE_OF_A_KIND',
-    STRAIGHT = 'STRAIGHT',
-    FLUSH = 'FLUSH',
-    FULL_HOUSE = 'FULL_HOUSE',
-    FOUR_OF_A_KIND = 'FOUR_OF_A_KIND',
-    STRAIGHT_FLUSH = 'STRAIGHT_FLUSH',
-    ROYAL_FLUSH = 'ROYAL_FLUSH',
-
+    HIGH_CARD = 'Legmagasabb lap',
+    PAIR = 'Egy pár',
+    TWO_PAIR = 'Két pár',
+    THREE_OF_A_KIND = 'Drill',
+    STRAIGHT = 'Sor',
+    FLUSH = 'Szín',
+    FULL_HOUSE = 'Full house',
+    FOUR_OF_A_KIND = 'Póker',
+    STRAIGHT_FLUSH = 'Szín sor',
+    ROYAL_FLUSH = 'Royal Flush',
+    EVERYONE_FOLD = 'mindenki bedobta',
 
 
 

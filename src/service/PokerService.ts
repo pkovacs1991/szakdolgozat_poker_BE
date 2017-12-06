@@ -14,6 +14,7 @@ import {emptyCompilationResult} from "gulp-typescript/release/reporter";
 import {ResultHand} from "../entity/ResultHand";
 import {endianness} from "os";
 import {isWorker} from "cluster";
+import {Rank} from "../entity/Rank";
 
 export class PokerService {
 
@@ -37,6 +38,7 @@ export class PokerService {
                 await this.newGame(0, this.tableId);
 
             }
+            this.tableStatus.message = user.username + ' joined';
             return JSON.stringify(this.tableStatus);
         } else {
             return JSON.stringify({message: "You should wait for another user"});
@@ -60,9 +62,11 @@ export class PokerService {
 
        } else if(!this.canAnyOneRaise()) {
            await this.nextStatus();
+           this.tableStatus.message = user.username + ' bedobta a lapjait';
            return JSON.stringify(this.tableStatus);
        } else {
            this.nextUser();
+           this.tableStatus.message = user.username + ' bedobta a lapjait';
            return JSON.stringify(this.tableStatus);
        }
 
@@ -82,13 +86,16 @@ export class PokerService {
         }
 
         this.emptyUserAction(user);
-        console.log(this.tableStatus.possibleRaiseActions);
-        console.log(this.canAnyOneRaise());
+
         if(!this.canAnyOneRaise()) {
-            await this.nextStatus();
+            let resultHand: string = await this.nextStatus();
+            if (resultHand) {
+                return resultHand;
+            }
         } else {
             this.nextUser();
         }
+        this.tableStatus.message = user.username + ' megadta az emelést';
         return JSON.stringify(this.tableStatus);
     }
 
@@ -108,9 +115,9 @@ export class PokerService {
         }
 
         this.setCallUsersAction(user);
-        console.log(this.tableStatus.possibleRaiseActions);
 
         this.nextUser();
+        this.tableStatus.message = user.username + ' emelte a tétet ' + amount + ' összeggel';
         return JSON.stringify(this.tableStatus);
     }
 
@@ -119,10 +126,14 @@ export class PokerService {
 
         this.emptyUserAction(user);
         if(!this.canAnyOneRaise()) {
-            await this.nextStatus();
+            let resultHand: string = await this.nextStatus();
+            if (resultHand) {
+                return resultHand;
+            }
         } else {
             this.nextUser();
         }
+        this.tableStatus.message = user.username + ' passzolt (Check)';
         return JSON.stringify(this.tableStatus);
     }
 
@@ -194,7 +205,7 @@ export class PokerService {
 
     async nextStatus() {
         if(this.tableStatus.status === Status.RIVER) {
-           await this.endGame();
+           return await this.endGame();
         } else {
             this.tableStatus.doNextStatus();
         }
@@ -222,25 +233,27 @@ export class PokerService {
     }
 
     async endGame() {
-        let winners: User[] = [];
+        let winners: ResultHand[] = [];
         if (this.tableStatus.activeUsers.length == 1) {
-            winners.push(this.tableStatus.activeUsers[0]);
+            let resultHand:ResultHand = new ResultHand(Rank.EVERYONE_FOLD,[]);
+            resultHand.user = this.tableStatus.activeUsers[0];
+            winners.push(resultHand);
         } else {
             const resultHand: ResultHand[] = evaluateWinner(this.tableStatus.hand, this.tableStatus.tableCards);
-            console.log(resultHand);
-            console.log(resultHand[0].cards);
+
             for(let i = 0; i < resultHand.length; i++) {
-                winners.push(resultHand[i].user);
+                winners.push(resultHand[i]);
             }
         }
 
        await this.handleMoney(winners);
        this.tableStatus.isEnd = true;
+        console.log(winners);
        return JSON.stringify({winner: winners});
 
     }
 
-    private async handleMoney(winners: User[]) {
+    private async handleMoney(winners: ResultHand[]) {
         const userRepository = getManager().getRepository(User);
         for(let i = 0; i < this.tableStatus.users.length; i++) {
             let user = this.tableStatus.users[i];
@@ -251,22 +264,11 @@ export class PokerService {
         }
         let winPot:number = Math.floor(this.tableStatus.pot / winners.length);
         for(let i = 0; i < winners.length; i++) {
-            let user: User = winners[i];
+            let user: User = winners[i].user;
             user.balance += winPot;
-            console.log(user.balance);
             await userRepository.save(user);
         }
     }
-
-    private isWinner(user: User, winners: User[]) {
-        for(let i = 0; i < winners.length; i++) {
-            if(winners[i].id === user.id) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 
     private getUserBet(user: User): number {
         let userBet = 0;
@@ -282,7 +284,6 @@ export class PokerService {
 
         let content: string;
         let contentJSON = JSON.parse(message.content);
-        console.log(contentJSON.action);
         if(contentJSON.action === 'JOINED') {
             content = await this.joinUser(message.from);
         } else if(contentJSON.action === 'FOLD') {
