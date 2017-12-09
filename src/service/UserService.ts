@@ -3,6 +3,8 @@ import {User} from "../entity/User";
 import {getManager} from "typeorm";
 import {AuthService} from "./AuhService";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
+import {UniqueConstraintException} from "../exception/UniqueConstraintException";
+import {ErrorMessage} from "../entity/ErrorMessage";
 
 
 
@@ -39,11 +41,11 @@ export module  UserService {
 
     export async function modifyUser(id: number, user: User, req: Request) {
         let response;
-        const loggedInUserId = AuthService.getIdByToken(req);
+        const loggedInUserId:number = AuthService.getIdByToken(req);
         const userRepository = getManager().getRepository(User);
         let loggedInUser = await userRepository.findOneById(loggedInUserId);
 
-        if(id === loggedInUserId || loggedInUser.isAdmin) {
+        if(id == loggedInUserId || loggedInUser.isAdmin) {
             await AuthService.isLoggedIn(req);
             await checkForUniques(user);
             await userRepository.updateById(id, user)
@@ -82,9 +84,27 @@ export module  UserService {
 
 
     export async function checkForUniques(user: User) {
+        let errorMessage:ErrorMessage[] = [];
         const userRepository = getManager().getRepository(User);
         const usersUniqueUserName: User[] = await userRepository.find({username: user.username});
         const usersUniqueEmail: User[] = await userRepository.find({email: user.email});
+        if (usersUniqueUserName.length === 1) {
+            if(user.id !== usersUniqueUserName[0].id) {
+                errorMessage.push(new ErrorMessage('Ez a felhasználónév már foglalt'));
+            }
+
+        }
+
+        if (usersUniqueEmail.length === 1) {
+            if(user.id !== usersUniqueEmail[0].id) {
+                errorMessage.push(new ErrorMessage('Ez az e-mail cím már foglalt'));
+            }
+
+        }
+
+        if( errorMessage.length > 0) {
+            throw new UniqueConstraintException(JSON.stringify(errorMessage));
+        }
 
     }
 

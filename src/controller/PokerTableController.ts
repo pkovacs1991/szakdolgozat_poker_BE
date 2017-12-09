@@ -2,6 +2,7 @@ import {Router, Request, Response, NextFunction} from 'express';
 import {PokerTableService} from "../service/PokerTableService";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
+import {UniqueConstraintException} from "../exception/UniqueConstraintException";
 
 export class PokerTableController {
     router: Router;
@@ -46,6 +47,11 @@ export class PokerTableController {
                 };
                 res.status(403);
             }
+            if (e instanceof UniqueConstraintException) {
+                console.log('hello');
+                message = e.message;
+                res.status(400);
+            }
         }
         res.header('Content-type','application/json');
         res.send(message);
@@ -88,6 +94,11 @@ export class PokerTableController {
 
                 };
                 res.status(403);
+            }
+            if (e instanceof UniqueConstraintException) {
+                console.log('hello');
+                message = e.message;
+                res.status(400);
             }
         }
 

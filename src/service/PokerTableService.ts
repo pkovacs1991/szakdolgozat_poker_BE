@@ -5,6 +5,8 @@ import {AuthService} from "./AuhService";
 import {PokerTableRepository} from "../repository/PokerTableRepository";
 import {User} from "../entity/User";
 import {PokerTableNotFoundException} from "../exception/PokerTableNotFoundException";
+import {ErrorMessage} from "../entity/ErrorMessage";
+import {UniqueConstraintException} from "../exception/UniqueConstraintException";
 
 
 
@@ -31,6 +33,7 @@ export module  PokerTableService {
         let pokerTable = pokerTableRepository.createFromJson(pokerTableJSON);
         pokerTable.actualBid = pokerTable.minBid;
         pokerTable.users = new Array<User>();
+        await checkForUniques(pokerTable);
         let newPokerTable = await pokerTableRepository.save(pokerTable);
         return (newPokerTable);
     }
@@ -39,6 +42,7 @@ export module  PokerTableService {
         let response;
         const pokerTableRepository = getManager().getRepository(PokerTable);
         await AuthService.isAdminLoggedIn(req);
+        await checkForUniques(pokerTable);
         await pokerTableRepository.updateById(id, pokerTable)
             .then(a => response = true)
             .catch(err => {
@@ -128,6 +132,23 @@ export module  PokerTableService {
             .catch(err => {
                 throw new PokerTableNotFoundException();
             });
+    }
+
+    export async function checkForUniques(pokerTable: PokerTable) {
+        let errorMessage:ErrorMessage[] = [];
+        const pokerTableRepository = getManager().getRepository(PokerTable);
+        const tablesUniqueTableName: PokerTable[] = await pokerTableRepository.find({name: pokerTable.name});
+        if (tablesUniqueTableName.length === 1) {
+            if(pokerTable.id !== tablesUniqueTableName[0].id) {
+                errorMessage.push(new ErrorMessage('Ez az asztal név már foglalt'));
+            }
+
+        }
+
+        if( errorMessage.length > 0) {
+            throw new UniqueConstraintException(JSON.stringify(errorMessage));
+        }
+
     }
 
 }

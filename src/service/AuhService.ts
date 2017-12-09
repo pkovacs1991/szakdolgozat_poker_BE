@@ -5,7 +5,10 @@ import {UserRepository} from "../repository/UserRepository";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 import {encode,decode}  from 'jwt-simple'
+import {UserService} from "./UserService";
 export module AuthService {
+
+    import checkForUniques = UserService.checkForUniques;
 
     export async function loginUser(req): Promise<User> {
         let userJSON = req.body;
@@ -30,7 +33,11 @@ export module AuthService {
     export async function  registerUser(userJSON) {
         console.log(userJSON);
         const userRepository = getManager().getCustomRepository(UserRepository);
+
         let user = userRepository.createFromJson(userJSON);
+        console.log(user)
+        await checkForUniques(user);
+
         let newUser = await userRepository.save(user);
         console.log("User has been saved. User id is", newUser.id);
         return (newUser);
@@ -58,7 +65,7 @@ export module AuthService {
 
     }
 
-    export function getIdByToken(req) {
+    export function getIdByToken(req): number {
         const token = req.header('token');
         var decoded = decode(token, 'secret', true);
         console.log(decoded);

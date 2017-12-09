@@ -3,6 +3,7 @@ import {AuthService} from "../service/AuhService";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {encode,decode}  from 'jwt-simple'
 import {User} from "../entity/User";
+import {UniqueConstraintException} from "../exception/UniqueConstraintException";
 
 export class AuthController {
     router: Router;
@@ -47,7 +48,18 @@ export class AuthController {
      * Register a User.
      */
     public async postRegister(req: Request, res: Response, next: NextFunction) {
-        let message = await AuthService.registerUser(req.body);
+        let message;
+        try {
+            console.log('starting');
+            message = await AuthService.registerUser(req.body);
+        } catch (e) {
+            if (e instanceof UniqueConstraintException) {
+                console.log('hello');
+                message = e.message;
+                res.status(400);
+            }
+        }
+
         res.header('Content-type','application/json');
         res.send(message);
 

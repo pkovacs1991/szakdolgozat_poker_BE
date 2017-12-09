@@ -3,6 +3,7 @@ import {Session} from "express-session";
 import {UserService} from "../service/UserService";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
+import {UniqueConstraintException} from "../exception/UniqueConstraintException";
 
 export class UserController {
     router: Router;
@@ -52,6 +53,10 @@ export class UserController {
 
                 };
                 res.status(403);
+            }
+            if (e instanceof UniqueConstraintException) {
+                message = e.message;
+                res.status(400);
             }
         }
 
