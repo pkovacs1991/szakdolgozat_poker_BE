@@ -317,6 +317,10 @@ export class PokerService {
             console.log('call raise' + message.from.username);
             content = await this.raiseUser(message.from, contentJSON.amount);
 
+        } else if(contentJSON.action === 'CHAT') {
+            console.log('call CHAT' + message.from.username);
+            content = JSON.stringify({message: message.from.username + ": " + contentJSON.message});
+
         } else {
             content = JSON.stringify({message: 'bad message'})
         }
