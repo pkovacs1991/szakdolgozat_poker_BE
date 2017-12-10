@@ -6,6 +6,7 @@ import {NotAuthenticatedException} from "../exception/NotAuthenticatedException"
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 import {encode,decode}  from 'jwt-simple'
 import {UserService} from "./UserService";
+import * as crypto from 'crypto-js';
 export module AuthService {
 
     import checkForUniques = UserService.checkForUniques;
@@ -13,6 +14,7 @@ export module AuthService {
     export async function loginUser(req): Promise<User> {
         let userJSON = req.body;
         const userRepository = getManager().getRepository(User);
+        userJSON.password = crypto.SHA256(userJSON.password).toString();
         let user = await userRepository.findOne(userJSON);
         if(user) {
             return (user);
@@ -35,8 +37,9 @@ export module AuthService {
         const userRepository = getManager().getCustomRepository(UserRepository);
 
         let user = userRepository.createFromJson(userJSON);
-        console.log(user)
         await checkForUniques(user);
+        user.password = crypto.SHA256(user.password).toString();
+        console.log(user);
 
         let newUser = await userRepository.save(user);
         console.log("User has been saved. User id is", newUser.id);

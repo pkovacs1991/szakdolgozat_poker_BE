@@ -5,6 +5,7 @@ import {AuthService} from "./AuhService";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 import {UniqueConstraintException} from "../exception/UniqueConstraintException";
 import {ErrorMessage} from "../entity/ErrorMessage";
+import * as crypto from 'crypto-js';
 
 
 
@@ -48,6 +49,11 @@ export module  UserService {
         if(id == loggedInUserId || loggedInUser.isAdmin) {
             await AuthService.isLoggedIn(req);
             await checkForUniques(user);
+            if(user.password === '') {
+                user.password = loggedInUser.password;
+            } else {
+                user.password = crypto.SHA256(user.password).toString();
+            }
             await userRepository.updateById(id, user)
                 .then(a => response = true)
                 .catch(err => {

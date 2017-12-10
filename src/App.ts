@@ -4,6 +4,7 @@ import * as logger from 'morgan';
 import * as bodyParser from 'body-parser';
 import * as http from "http";
 import * as socketIo from "socket.io";
+import * as crypto from 'crypto-js';
 import "reflect-metadata";
 import {createConnection} from "typeorm";
 import {User} from "./entity/User";
@@ -34,7 +35,7 @@ class App {
           const admin = new User();
           admin.id = 1;
           admin.username = 'admin';
-          admin.password = '1234';
+          admin.password = crypto.SHA256('1234').toString();
           admin.email = 'admin@admin.com';
           admin.balance = 500;
           admin.firstName = 'admin';
@@ -54,7 +55,9 @@ class App {
       this.config()
       this.sockets();
       this.listen();
+      // Encrypt
 
+// Decrypt
       console.log("Server started in localhost:3000");
   }
 
