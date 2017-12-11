@@ -217,7 +217,9 @@ export class PokerService {
         const pokerTableRepository = getManager().getRepository(PokerTable);
         let table = await pokerTableRepository.findOneById(tableId);
         this.dealer = dealer;
+
         const smallBlindIndex = this.nextIndex(dealer);
+
         const bigBlindIndex = this.nextIndex(smallBlindIndex);
         const turnIndex = this.nextIndex(bigBlindIndex);
 
@@ -251,6 +253,16 @@ export class PokerService {
         console.log(winners);
        return JSON.stringify({winner: winners});
 
+    }
+
+    removeUsersWhoHasNoMoney(table: PokerTable) {
+        let usersWithMoney: User[] = []
+        for (let i = 0; i < this.users.length; i++) {
+            if (this.users[i].balance > table.minBid * 2) {
+                usersWithMoney.push(this.users[i]);
+            }
+        }
+        this.users = usersWithMoney;
     }
 
     private async handleMoney(winners: ResultHand[]) {
@@ -290,27 +302,39 @@ export class PokerService {
             console.log('call fold')
             content = await this.foldUser(message.from);
             if (this.tableStatus.isEnd) {
+                this.removeUsersWhoHasNoMoney(this.tableStatus.table);
+                if (this.users.length > 1) {
+                    await this.newGame(this.nextIndex(this.dealer), this.tableId);
+                    this.isNew = true;
+                } else {
 
-                await this.newGame(this.nextIndex(this.dealer), this.tableId);
-                this.isNew = true;
+                }
             }
 
         } else if(contentJSON.action === 'CHECK') {
             console.log('call check')
             content = await this.checkUser(message.from);
             if (this.tableStatus.isEnd) {
+                this.removeUsersWhoHasNoMoney(this.tableStatus.table);
+                if (this.users.length > 1) {
+                    await this.newGame(this.nextIndex(this.dealer), this.tableId);
+                    this.isNew = true;
+                } else {
 
-                await this.newGame(this.nextIndex(this.dealer), this.tableId);
-                this.isNew = true;
+                }
             }
 
         } else if(contentJSON.action === 'CALL') {
             console.log('call call')
             content = await this.callUser(message.from);
             if (this.tableStatus.isEnd) {
+                this.removeUsersWhoHasNoMoney(this.tableStatus.table);
+                if (this.users.length > 1) {
+                    await this.newGame(this.nextIndex(this.dealer), this.tableId);
+                    this.isNew = true;
+                } else {
 
-                await this.newGame(this.nextIndex(this.dealer), this.tableId);
-                this.isNew = true;
+                }
             }
 
         } else if(contentJSON.action === 'RAISE') {

@@ -43,9 +43,7 @@ class App {
           admin.isAdmin = true;
 
           await admin.save();
-          console.log("Loading users from the database...");
           const users = await connection.manager.find(User);
-          console.log("Loaded users: ", users);
 
 
 
@@ -106,7 +104,6 @@ class App {
         socket.on('message', async (m: Message) => {
             let content: string;
             let contentJSON = JSON.parse(m.content);
-            console.log('aaaaaaa', m);
             const tableId = contentJSON.table;
             let pokerService: PokerService = null;
             for(let i = 0; i < pokerServices.length; i++) {
@@ -114,21 +111,20 @@ class App {
                     pokerService = pokerServices[i];
                 }
             }
-            console.log(pokerService);
             if (!pokerService) {
                 pokerService = new PokerService(tableId);
                 pokerServices.push(pokerService);
             }
             if( contentJSON.action === 'JOINED') {
                 socket.join(contentJSON.table);
-                console.log('joined.');
             }
             m = await pokerService.handleMessage(m);
-            //console.log('[server](message): %s', JSON.stringify(m));
-            console.log(contentJSON.table);
             this.io.to(contentJSON.table).emit('message', m);
+            if (pokerService.users.length < 2) {
+                this.io.to(contentJSON.table).emit('message', new Message(m.from, JSON.stringify({message: "You should wait for another user"})));
+                this.io.to(contentJSON.table).emit('message', new Message(m.from, JSON.stringify({reset: true})));
+            }
             if (pokerService.isNew) {
-                //console.log('[server](message): %s', JSON.stringify(m));
                 this.io.to(contentJSON.table).emit('message', new Message(m.from, JSON.stringify(pokerService.tableStatus)));
                 pokerService.isNew = false;
             }
