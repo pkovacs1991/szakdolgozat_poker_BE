@@ -36,9 +36,6 @@ var PokerTable = /** @class */ (function (_super) {
         typeorm_1.Column()
     ], PokerTable.prototype, "maxBid", void 0);
     __decorate([
-        typeorm_1.Column({ nullable: true })
-    ], PokerTable.prototype, "actualBid", void 0);
-    __decorate([
         typeorm_1.OneToMany(function (type) { return User_1.User; }, function (user) { return user.pokerTable; })
     ], PokerTable.prototype, "users", void 0);
     PokerTable = __decorate([

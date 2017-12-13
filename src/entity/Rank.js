@@ -2,16 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var Rank;
 (function (Rank) {
-    Rank["HIGH_CARD"] = "HIGH_CARD";
-    Rank["PAIR"] = "PAIR";
-    Rank["TWO_PAIR"] = "TWO_PAIR";
-    Rank["THREE_OF_A_KIND"] = "THREE_OF_A_KIND";
-    Rank["STRAIGHT"] = "STRAIGHT";
-    Rank["FLUSH"] = "FLUSH";
-    Rank["FULL_HOUSE"] = "FULL_HOUSE";
-    Rank["FOUR_OF_A_KIND"] = "FOUR_OF_A_KIND";
-    Rank["STRAIGHT_FLUSH"] = "STRAIGHT_FLUSH";
-    Rank["ROYAL_FLUSH"] = "ROYAL_FLUSH";
+    Rank["HIGH_CARD"] = "Legmagasabb lap";
+    Rank["PAIR"] = "Egy p\u00E1r";
+    Rank["TWO_PAIR"] = "K\u00E9t p\u00E1r";
+    Rank["THREE_OF_A_KIND"] = "Drill";
+    Rank["STRAIGHT"] = "Sor";
+    Rank["FLUSH"] = "Sz\u00EDn";
+    Rank["FULL_HOUSE"] = "Full house";
+    Rank["FOUR_OF_A_KIND"] = "P\u00F3ker";
+    Rank["STRAIGHT_FLUSH"] = "Sz\u00EDn sor";
+    Rank["ROYAL_FLUSH"] = "Royal Flush";
+    Rank["EVERYONE_FOLD"] = "mindenki bedobta";
 })(Rank = exports.Rank || (exports.Rank = {}));
 function getRankInNumber(rank) {
     if (rank == Rank.HIGH_CARD) {
