@@ -4,6 +4,7 @@ import {NotAuthenticatedException} from "../exception/NotAuthenticatedException"
 import {encode,decode}  from 'jwt-simple'
 import {User} from "../entity/User";
 import {UniqueConstraintException} from "../exception/UniqueConstraintException";
+import {NullConstraintException} from "../exception/NullConstraintException";
 
 export class AuthController {
     router: Router;
@@ -36,7 +37,7 @@ export class AuthController {
                 console.log(e);
             }
         } else {
-            message = "Fail";
+            message = JSON.stringify({message: 'Fail'});
             res.status(400);
         }
         res.header('Content-type','application/json');
@@ -54,7 +55,11 @@ export class AuthController {
             message = await AuthService.registerUser(req.body);
         } catch (e) {
             if (e instanceof UniqueConstraintException) {
-                console.log('hello');
+                message = e.message;
+                res.status(400);
+            }
+
+            if (e instanceof NullConstraintException) {
                 message = e.message;
                 res.status(400);
             }
@@ -83,7 +88,7 @@ export class AuthController {
                     response: "Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
         }
             res.send(message);
@@ -97,7 +102,7 @@ export class AuthController {
     init() {
         this.router.post('/login', this.postLogin);
         this.router.post('/register',this.postRegister);
-        this.router.all('/currentUser',this.getUser);
+        this.router.get('/currentUser',this.getUser);
     }
 
 }

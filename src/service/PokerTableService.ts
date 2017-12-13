@@ -7,6 +7,7 @@ import {User} from "../entity/User";
 import {PokerTableNotFoundException} from "../exception/PokerTableNotFoundException";
 import {ErrorMessage} from "../entity/ErrorMessage";
 import {UniqueConstraintException} from "../exception/UniqueConstraintException";
+import {NullConstraintException} from "../exception/NullConstraintException";
 
 
 
@@ -31,9 +32,9 @@ export module  PokerTableService {
         const pokerTableRepository = getManager().getCustomRepository(PokerTableRepository);
         await AuthService.isAdminLoggedIn(req);
         let pokerTable = pokerTableRepository.createFromJson(pokerTableJSON);
-        pokerTable.actualBid = pokerTable.minBid;
         pokerTable.users = new Array<User>();
-        await checkForUniques(pokerTable);
+        await checkForUniques(0 ,pokerTable);
+        await checkForEmpty( pokerTable);
         let newPokerTable = await pokerTableRepository.save(pokerTable);
         return (newPokerTable);
     }
@@ -42,7 +43,8 @@ export module  PokerTableService {
         let response;
         const pokerTableRepository = getManager().getRepository(PokerTable);
         await AuthService.isAdminLoggedIn(req);
-        await checkForUniques(pokerTable);
+        await checkForUniques(id, pokerTable);
+        await checkForEmpty( pokerTable);
         await pokerTableRepository.updateById(id, pokerTable)
             .then(a => response = true)
             .catch(err => {
@@ -73,15 +75,16 @@ export module  PokerTableService {
         let pokerTable;
         try {
             pokerTable = await getPokerTable(id);
+            let user = await AuthService.currentUser(req);
+            pokerTable.users.push(user);
+            console.log(pokerTable);
+            await pokerTableRepository.save(pokerTable);
         } catch(e) {
-            if(e instanceof  PokerTableNotFoundException) {
+
                 response = false;
-            }
+
         }
-        let user = await AuthService.currentUser(req);
-        pokerTable.users.push(user);
-        console.log(pokerTable);
-        await pokerTableRepository.save(pokerTable);
+
         return response;
     }
 
@@ -95,15 +98,16 @@ export module  PokerTableService {
         let pokerTable;
         try {
             pokerTable = await getPokerTable(id);
+            let user = await AuthService.currentUser(req);
+            pokerTable = removeUserFromTable(pokerTable, user);
+            await pokerTableRepository.save(pokerTable);
+
         } catch(e) {
-            if(e instanceof  PokerTableNotFoundException) {
+
                 response = false;
-            }
+
         }
 
-        let user = await AuthService.currentUser(req);
-        pokerTable = removeUserFromTable(pokerTable, user);
-        await pokerTableRepository.save(pokerTable);
 
         return response;
 
@@ -134,12 +138,12 @@ export module  PokerTableService {
             });
     }
 
-    export async function checkForUniques(pokerTable: PokerTable) {
+    export async function checkForUniques(id, pokerTable: PokerTable) {
         let errorMessage:ErrorMessage[] = [];
         const pokerTableRepository = getManager().getRepository(PokerTable);
         const tablesUniqueTableName: PokerTable[] = await pokerTableRepository.find({name: pokerTable.name});
         if (tablesUniqueTableName.length === 1) {
-            if(pokerTable.id !== tablesUniqueTableName[0].id) {
+            if(id != tablesUniqueTableName[0].id) {
                 errorMessage.push(new ErrorMessage('Ez az asztal név már foglalt'));
             }
 
@@ -147,6 +151,26 @@ export module  PokerTableService {
 
         if( errorMessage.length > 0) {
             throw new UniqueConstraintException(JSON.stringify(errorMessage));
+        }
+
+    }
+
+    export async function checkForEmpty(pokerTable: PokerTable) {
+        let errorMessage:ErrorMessage[] = [];
+        if (!pokerTable.name) {
+            errorMessage.push(new ErrorMessage('Asztal név nem lehet üres'));
+        }
+
+        if (!pokerTable.minBid) {
+            errorMessage.push(new ErrorMessage('Minimális emelés nem lehet üres'));
+        }
+
+        if (!pokerTable.maxBid) {
+            errorMessage.push(new ErrorMessage('Maximális emelés nem lehet üres'));
+        }
+
+        if( errorMessage.length > 0) {
+            throw new NullConstraintException(JSON.stringify(errorMessage));
         }
 
     }

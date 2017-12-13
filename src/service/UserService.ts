@@ -6,6 +6,8 @@ import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 import {UniqueConstraintException} from "../exception/UniqueConstraintException";
 import {ErrorMessage} from "../entity/ErrorMessage";
 import * as crypto from 'crypto-js';
+import {NullConstraintException} from "../exception/NullConstraintException";
+import {UserRepository} from "../repository/UserRepository";
 
 
 
@@ -40,20 +42,25 @@ export module  UserService {
        return response;
     }
 
-    export async function modifyUser(id: number, user: User, req: Request) {
+    export async function modifyUser(id: number, user:User, req: Request) {
         let response;
         const loggedInUserId:number = AuthService.getIdByToken(req);
-        const userRepository = getManager().getRepository(User);
+        await AuthService.isLoggedIn(req);
+        const userRepository = getManager().getCustomRepository(UserRepository);
         let loggedInUser = await userRepository.findOneById(loggedInUserId);
 
+        console.log(user);
         if(id == loggedInUserId || loggedInUser.isAdmin) {
-            await AuthService.isLoggedIn(req);
-            await checkForUniques(user);
+
+            await checkForUniques(id, user);
             if(user.password === '') {
                 user.password = loggedInUser.password;
             } else {
                 user.password = crypto.SHA256(user.password).toString();
             }
+            console.log('start');
+            await checkForEmpty(user);
+            console.log('end');
             await userRepository.updateById(id, user)
                 .then(a => response = true)
                 .catch(err => {
@@ -69,14 +76,14 @@ export module  UserService {
 
     export async function resetBalance(req: Request) {
         let response;
-        console.log('im here');
+
+        await AuthService.isLoggedIn(req);
         const loggedInUserId = AuthService.getIdByToken(req);
         const userRepository = getManager().getRepository(User);
         let loggedInUser = await userRepository.findOneById(loggedInUserId);
         if (loggedInUser.balance < 500) {
             loggedInUser.balance = 500;
         }
-        await AuthService.isLoggedIn(req);
         await userRepository.updateById(loggedInUser.id, loggedInUser)
             .then(a => response = true)
             .catch(err => {
@@ -89,20 +96,22 @@ export module  UserService {
 
 
 
-    export async function checkForUniques(user: User) {
+    export async function checkForUniques(id, user: User) {
         let errorMessage:ErrorMessage[] = [];
         const userRepository = getManager().getRepository(User);
         const usersUniqueUserName: User[] = await userRepository.find({username: user.username});
+        console.log(id);
+        console.log(usersUniqueUserName);
         const usersUniqueEmail: User[] = await userRepository.find({email: user.email});
         if (usersUniqueUserName.length === 1) {
-            if(user.id !== usersUniqueUserName[0].id) {
+            if(id != usersUniqueUserName[0].id) {
                 errorMessage.push(new ErrorMessage('Ez a felhasználónév már foglalt'));
             }
 
         }
 
         if (usersUniqueEmail.length === 1) {
-            if(user.id !== usersUniqueEmail[0].id) {
+            if(id != usersUniqueEmail[0].id) {
                 errorMessage.push(new ErrorMessage('Ez az e-mail cím már foglalt'));
             }
 
@@ -110,6 +119,38 @@ export module  UserService {
 
         if( errorMessage.length > 0) {
             throw new UniqueConstraintException(JSON.stringify(errorMessage));
+        }
+
+    }
+
+
+    export async function checkForEmpty(user: User) {
+        let errorMessage:ErrorMessage[] = [];
+        if (!user.username) {
+                errorMessage.push(new ErrorMessage('Felhasználó név nem lehet üres'));
+        }
+
+        if (!user.password) {
+            errorMessage.push(new ErrorMessage('Jelszó nem lehet üres'));
+        }
+
+        if (!user.email) {
+            errorMessage.push(new ErrorMessage('E-mail cím nem lehet üres'));
+        }
+
+        if (!user.firstName) {
+            errorMessage.push(new ErrorMessage('Keresztnév nem lehet üres'));
+        }
+
+        if (!user.lastName) {
+            errorMessage.push(new ErrorMessage('Vezetéknév nem lehet üres'));
+        }
+
+        console.log(user);
+        console.log(errorMessage);
+
+        if( errorMessage.length > 0) {
+            throw new NullConstraintException(JSON.stringify(errorMessage));
         }
 
     }

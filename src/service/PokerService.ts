@@ -49,6 +49,8 @@ export class PokerService {
     async foldUser(user: User) {
 
        let users = this.tableStatus.activeUsers;
+        this.nextUser();
+        console.log('userid', user.id);
        for (let i = 0; i < users.length; i++) {
            if(user.id === users[i].id) {
                this.tableStatus.removeUserFromUserAction(user);
@@ -65,7 +67,6 @@ export class PokerService {
            this.tableStatus.message = user.username + ' bedobta a lapjait';
            return JSON.stringify(this.tableStatus);
        } else {
-           this.nextUser();
            this.tableStatus.message = user.username + ' bedobta a lapjait';
            return JSON.stringify(this.tableStatus);
        }
@@ -186,7 +187,9 @@ export class PokerService {
     private nextUser() {
         let users = this.tableStatus.activeUsers;
         for (let i = 0; i < users.length; i++) {
+
             if(this.tableStatus.turn.id === users[i].id) {
+                console.log('helloo');
                 this.tableStatus.turn = users[this.nextActiveIndex(i)];
                 break;
             }

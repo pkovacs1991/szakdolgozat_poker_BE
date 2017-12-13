@@ -4,6 +4,7 @@ import {UserService} from "../service/UserService";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 import {UniqueConstraintException} from "../exception/UniqueConstraintException";
+import {NullConstraintException} from "../exception/NullConstraintException";
 
 export class UserController {
     router: Router;
@@ -40,12 +41,13 @@ export class UserController {
                 res.status(400);
             }
         } catch (e) {
+            console.log(e);
             if(e instanceof NotAuthenticatedException){
                 message = {
                     response: "Modify Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -55,6 +57,11 @@ export class UserController {
                 res.status(403);
             }
             if (e instanceof UniqueConstraintException) {
+                message = e.message;
+                res.status(400);
+            }
+
+            if (e instanceof NullConstraintException) {
                 message = e.message;
                 res.status(400);
             }
@@ -91,7 +98,7 @@ export class UserController {
                     response: "Delete Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -133,7 +140,7 @@ export class UserController {
                     response: "Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -169,7 +176,7 @@ export class UserController {
                     response: "Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -213,7 +220,7 @@ export class UserController {
                     response: "Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
         }
 

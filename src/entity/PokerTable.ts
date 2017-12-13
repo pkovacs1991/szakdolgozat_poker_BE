@@ -16,9 +16,6 @@ export class PokerTable extends BaseEntity{
     @Column()
     maxBid: number;
 
-    @Column({nullable:true})
-    actualBid: number;
-
     @OneToMany(type => User, user => user.pokerTable)
     users: User[];
 

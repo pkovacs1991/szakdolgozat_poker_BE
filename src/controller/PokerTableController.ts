@@ -3,6 +3,7 @@ import {PokerTableService} from "../service/PokerTableService";
 import {NotAuthenticatedException} from "../exception/NotAuthenticatedException";
 import {NotAuthoreizedException} from "../exception/NotAuthorizedException";
 import {UniqueConstraintException} from "../exception/UniqueConstraintException";
+import {NullConstraintException} from "../exception/NullConstraintException";
 
 export class PokerTableController {
     router: Router;
@@ -38,7 +39,7 @@ export class PokerTableController {
                     response: "Create Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -49,6 +50,10 @@ export class PokerTableController {
             }
             if (e instanceof UniqueConstraintException) {
                 console.log('hello');
+                message = e.message;
+                res.status(400);
+            }
+            if (e instanceof NullConstraintException) {
                 message = e.message;
                 res.status(400);
             }
@@ -86,7 +91,7 @@ export class PokerTableController {
                     response: "Modify Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -97,6 +102,10 @@ export class PokerTableController {
             }
             if (e instanceof UniqueConstraintException) {
                 console.log('hello');
+                message = e.message;
+                res.status(400);
+            }
+            if (e instanceof NullConstraintException) {
                 message = e.message;
                 res.status(400);
             }
@@ -135,7 +144,7 @@ export class PokerTableController {
                     response: "Delete Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -167,6 +176,7 @@ export class PokerTableController {
                     response: "Poker Table not found!"
 
                 };
+                res.status(400);
             }
         } catch (e) {
             if(e instanceof NotAuthenticatedException){
@@ -174,7 +184,7 @@ export class PokerTableController {
                     response: "Poker Table get Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -205,7 +215,7 @@ export class PokerTableController {
                     response: "Poker Tables get Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -247,7 +257,7 @@ export class PokerTableController {
                     response: "Join Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {
@@ -291,7 +301,7 @@ export class PokerTableController {
                     response: "Leave Failed!, Not authenticated"
 
                 };
-                res.status(403);
+                res.status(401);
             }
             if(e instanceof NotAuthoreizedException){
                 message = {

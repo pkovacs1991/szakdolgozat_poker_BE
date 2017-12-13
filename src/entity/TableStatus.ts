@@ -86,7 +86,7 @@ export class TableStatus {
     private setPossibleRaiseActions() {
         this.possibleRaiseActions = [];
         for (let i = 0; i < this.activeUsers.length; i++) {
-                const possibleRaiseAction = new PossibleRaiseAction(this.users[i],[Action.CALL,Action.RAISE]);
+                const possibleRaiseAction = new PossibleRaiseAction(this.activeUsers[i],[Action.CALL,Action.RAISE]);
                 this.possibleRaiseActions.push(possibleRaiseAction);
 
         }
@@ -95,6 +95,8 @@ export class TableStatus {
     removeUserFromUserAction(user: User) {
         for (let i = 0; i < this.possibleRaiseActions.length; i++) {
             if(user.id === this.possibleRaiseActions[i].user.id) {
+                console.log('userid', user.id);
+                console.log('raise', this.possibleRaiseActions[i].user.id);
                 this.possibleRaiseActions.splice(i, 1);
                 break;
             }

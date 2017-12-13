@@ -10,6 +10,7 @@ import * as crypto from 'crypto-js';
 export module AuthService {
 
     import checkForUniques = UserService.checkForUniques;
+    import checkForEmpty = UserService.checkForEmpty;
 
     export async function loginUser(req): Promise<User> {
         let userJSON = req.body;
@@ -37,7 +38,8 @@ export module AuthService {
         const userRepository = getManager().getCustomRepository(UserRepository);
 
         let user = userRepository.createFromJson(userJSON);
-        await checkForUniques(user);
+        await checkForUniques(0 ,user);
+        await checkForEmpty(user);
         user.password = crypto.SHA256(user.password).toString();
         console.log(user);
 
@@ -70,10 +72,13 @@ export module AuthService {
 
     export function getIdByToken(req): number {
         const token = req.header('token');
-        var decoded = decode(token, 'secret', true);
-        console.log(decoded);
-        console.log(decoded.id);
-        return decoded.id;
+        if (token) {
+            var decoded = decode(token, 'secret', true);
+            console.log(decoded);
+            console.log(decoded.id);
+            return decoded.id;
+        }
+        return null;
     }
 
 
